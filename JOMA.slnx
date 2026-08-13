@@ -3,5 +3,5 @@
     <Platform Name="x64" />
     <Platform Name="x86" />
   </Configurations>
-  <Project Path="JOMA/JOMA.vcxproj" />
+  <Project Path="JOMA/JOMA.vcxproj" Id="06f2f9c7-7b92-4b6f-af98-c61d307c21c7" />
 </Solution>
