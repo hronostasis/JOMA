@@ -1,6 +1,19 @@
 #include "Virus.h"
 
-Virus::Virus(VirusType type, sf::Vector2f position) : type(type) {
+namespace {
+    VirusStats getStatsForType(VirusType type) {
+        switch (type) {
+        case VirusType::Circle:   return { 50.f,  80.f, 1.0f, 10.f }; //средний брат
+        case VirusType::Triangle: return { 25.f, 140.f, 1.8f,  4.f }; //быстрый, хрупкий
+        case VirusType::Square:   return { 200.f,  40.f, 0.6f, 50.f }; //танк, медленный
+        }
+        return {};
+    }
+}
+
+Virus::Virus(VirusType type, sf::Vector2f position)
+    : type(type), stats(getStatsForType(type)), currentHealth(stats.health)
+{
     switch (type) {
     case VirusType::Circle: {
         auto circle = std::make_unique<sf::CircleShape>(30.f);
@@ -41,4 +54,9 @@ sf::FloatRect Virus::getGlobalBounds() const {
 
 void Virus::setHovered(bool hovered) {
     shape->setOutlineColor(hovered ? sf::Color::White : sf::Color::Transparent);
+}
+
+void Virus::takeDamage(float amount) {
+    currentHealth -= amount;
+    if (currentHealth < 0.f) currentHealth = 0.f;
 }

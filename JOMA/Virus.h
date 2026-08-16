@@ -4,6 +4,13 @@
 
 enum class VirusType { Circle, Triangle, Square };
 
+struct VirusStats {
+    float health;
+    float moveSpeed;    //пиксели/сек
+    float attackSpeed;  //урон/сек
+    float attackPower;  //урон за тычку
+};
+
 class Virus {
 public:
     Virus(VirusType type, sf::Vector2f position);
@@ -12,7 +19,18 @@ public:
     sf::FloatRect getGlobalBounds() const;
     void setHovered(bool hovered);
 
+    float getHealth() const { return currentHealth; }
+    float getMaxHealth() const { return stats.health; }
+    float getMoveSpeed() const { return stats.moveSpeed; }
+    float getAttackSpeed() const { return stats.attackSpeed; }
+    float getAttackPower() const { return stats.attackPower; }
+    bool isAlive() const { return currentHealth > 0.f; }
+
+    void takeDamage(float amount);
+
 private:
     VirusType type;
     std::unique_ptr<sf::Shape> shape;
+    VirusStats stats;
+    float currentHealth;
 };
