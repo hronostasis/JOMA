@@ -1,22 +1,17 @@
 #pragma once
 #include <SFML/Graphics.hpp>
-#include <vector>
-#include "Virus.h"
-
-enum class GameState { MainMenu, Playing, Paused, Victory, Defeat };
+#include "Scene.h"
+#include <memory>
 
 class Game {
 public:
     Game();
     void run();
+    void changeScene(std::unique_ptr<Scene> newScene);
+    sf::RenderWindow& getWindow() { return window; }
 
 private:
-    void handleEvents();
-    void update(float deltaTime);
-    void render();
-
     sf::RenderWindow window;
     sf::Clock clock;
-    GameState state;
-    std::vector<Virus> viruses;
+    std::unique_ptr<Scene> currentScene;
 };

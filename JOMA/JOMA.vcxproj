@@ -151,11 +151,19 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="Game.cpp" />
+    <ClCompile Include="LevelSelectScene.cpp" />
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="MainMenuScene.cpp" />
+    <ClCompile Include="MainMenuScene.h" />
+    <ClCompile Include="PlayingScene.cpp" />
     <ClCompile Include="Virus.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Game.h" />
+    <ClInclude Include="LevelSelectScene.h" />
+    <ClInclude Include="PlayingScene.h" />
+    <ClInclude Include="Scene.h" />
+    <ClInclude Include="UI.h" />
     <ClInclude Include="Virus.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
