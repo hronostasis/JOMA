@@ -28,9 +28,15 @@ public:
 
     void takeDamage(float amount);
 
+    void setPath(std::vector<sf::Vector2f> newPath);
+    void update(float deltaTime);
+    bool hasReachedEnd() const { return reachedEnd; }
 private:
     VirusType type;
     std::unique_ptr<sf::Shape> shape;
     VirusStats stats;
     float currentHealth;
+    std::vector<sf::Vector2f> path;
+    size_t pathIndex = 0;
+    bool reachedEnd = false;
 };

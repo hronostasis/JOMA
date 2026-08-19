@@ -1,5 +1,5 @@
 #include "Virus.h"
-
+#include <cmath>
 namespace {
     VirusStats getStatsForType(VirusType type) {
         switch (type) {
@@ -59,4 +59,29 @@ void Virus::setHovered(bool hovered) {
 void Virus::takeDamage(float amount) {
     currentHealth -= amount;
     if (currentHealth < 0.f) currentHealth = 0.f;
+}
+void Virus::setPath(std::vector<sf::Vector2f> newPath) {
+    path = std::move(newPath);
+    pathIndex = 1; //индекс 0 — стартовая точка, вирус там уже стоит
+    reachedEnd = path.size() <= 1;
+}
+
+void Virus::update(float deltaTime) {
+    if (reachedEnd || pathIndex >= path.size()) { reachedEnd = true; return; }
+
+    sf::Vector2f target = path[pathIndex];
+    sf::Vector2f current = shape->getPosition();
+    sf::Vector2f diff = target - current;
+    float dist = std::sqrt(diff.x * diff.x + diff.y * diff.y);
+    float step = stats.moveSpeed * deltaTime;
+
+    if (step >= dist) {
+        shape->setPosition(target);
+        pathIndex++;
+        if (pathIndex >= path.size()) reachedEnd = true;
+    }
+    else {
+        sf::Vector2f dir = diff / dist;
+        shape->setPosition(current + dir * step);
+    }
 }

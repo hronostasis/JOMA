@@ -1,10 +1,29 @@
 #include "PlayingScene.h"
 #include "Game.h"
+#include <cstdlib>
 
-PlayingScene::PlayingScene() {
-    viruses.emplace_back(VirusType::Circle, sf::Vector2f(200.f, 300.f));
-    viruses.emplace_back(VirusType::Triangle, sf::Vector2f(400.f, 300.f));
-    viruses.emplace_back(VirusType::Square, sf::Vector2f(600.f, 300.f));
+PlayingScene::PlayingScene()
+    : tileMap(cellSize, sf::Vector2f(80.f, 45.f))
+{
+    GridPos server = { cols / 2, rows / 2 };
+    int pathCount = 2 + (rand() % 2);
+    std::vector<GridPos> spawns = pickSpawnPoints(cols, rows, pathCount);
+    std::vector<std::vector<GridPos>> allPaths = generateAllPaths(spawns, server, cols, rows);
+
+    tileMap.build(allPaths, server);
+
+    VirusType types[] = { VirusType::Circle, VirusType::Triangle, VirusType::Square };
+    int typeIndex = 0;
+
+    for (const auto& gridPath : allPaths) {
+        std::vector<sf::Vector2f> waypoints;
+        for (const auto& cell : gridPath) waypoints.push_back(tileMap.worldPos(cell));
+
+        Virus virus(types[typeIndex % 3], waypoints[0]);
+        virus.setPath(waypoints);
+        viruses.push_back(std::move(virus));
+        typeIndex++;
+    }
 }
 
 void PlayingScene::handleEvent(const sf::Event& event, Game& game) {
@@ -29,9 +48,11 @@ void PlayingScene::update(float deltaTime, Game& game) {
     sf::Vector2f mousePos = game.getWindow().mapPixelToCoords(sf::Mouse::getPosition(game.getWindow()));
     for (auto& virus : viruses) {
         virus.setHovered(virus.getGlobalBounds().contains(mousePos));
+        virus.update(deltaTime);
     }
 }
 
 void PlayingScene::render(sf::RenderWindow& window) {
+    tileMap.draw(window);
     for (auto& virus : viruses) virus.draw(window);
 }

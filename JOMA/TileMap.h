@@ -5,15 +5,15 @@
 
 class TileMap {
 public:
-    TileMap(float cellSize);
+    TileMap(float cellSize, sf::Vector2f origin);
     void build(const std::vector<std::vector<GridPos>>& allPaths, GridPos serverPos);
     void draw(sf::RenderWindow& window);
+    sf::Vector2f worldPos(GridPos p) const;
 
 private:
     float cellSize;
+    sf::Vector2f origin;
     sf::Texture texStraight, texCorner, texServer;
     std::vector<sf::Sprite> tileSprites;
     sf::Sprite serverSprite;
-
-    sf::Vector2f toWorld(GridPos p) const;
 };
