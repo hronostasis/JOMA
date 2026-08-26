@@ -5,6 +5,16 @@
 #include "PathGenerator.h"
 #include <vector>
 
+struct SpawnPoint {
+    std::vector<sf::Vector2f> waypoints;
+    VirusType type;
+    sf::Sprite sprite;
+
+    SpawnPoint(sf::Texture& tex, std::vector<sf::Vector2f> wp, VirusType t)
+        : waypoints(std::move(wp)), type(t), sprite(tex) {
+    }
+};
+
 class PlayingScene : public Scene {
 public:
     PlayingScene();
@@ -18,5 +28,8 @@ private:
     static constexpr float cellSize = 70.f;
 
     TileMap tileMap;
+    sf::Texture spawnTexture;
+    std::vector<SpawnPoint> spawnPoints;
     std::vector<Virus> viruses;
+    int virusBudget = 10;
 };

@@ -3,9 +3,9 @@
 TileMap::TileMap(float cellSize, sf::Vector2f origin)
     : cellSize(cellSize), origin(origin), serverSprite(texServer)
 {
-    texStraight.loadFromFile("assets/tiles/path_straight.png");
-    texCorner.loadFromFile("assets/tiles/path_corner.png");
-    texServer.loadFromFile("assets/tiles/entity_core.png");
+    (void)texStraight.loadFromFile("assets/tiles/path_straight.png");
+    (void)texCorner.loadFromFile("assets/tiles/path_corner.png");
+    (void)texServer.loadFromFile("assets/tiles/entity_core.png");
     serverSprite.setTexture(texServer, true);
 }
 
@@ -13,23 +13,29 @@ sf::Vector2f TileMap::worldPos(GridPos p) const {
     return { origin.x + p.x * cellSize + cellSize / 2.f, origin.y + p.y * cellSize + cellSize / 2.f };
 }
 
-int getDir(GridPos from, GridPos to) {
+static int getDir(GridPos from, GridPos to) {
     if (to.x > from.x) return 0;
     if (to.y > from.y) return 1;
     if (to.x < from.x) return 2;
     return 3;
 }
 
-void TileMap::build(const std::vector<std::vector<GridPos>>& allPaths, GridPos serverPos) {
+static int directionTowardBlock(GridPos cell, GridPos serverBlockOrigin) {
+    if (cell.y < serverBlockOrigin.y) return 1;
+    if (cell.y > serverBlockOrigin.y + 2) return 3;
+    if (cell.x < serverBlockOrigin.x) return 0;
+    return 2;
+}
+
+void TileMap::build(const std::vector<std::vector<GridPos>>& allPaths, GridPos serverBlockOrigin) {
     tileSprites.clear();
 
     for (const auto& path : allPaths) {
-        for (size_t i = 0; i + 1 < path.size(); i++) {
+        for (size_t i = 1; i < path.size(); i++) {
             GridPos cell = path[i];
-            if (cell.x == serverPos.x && cell.y == serverPos.y) continue;
 
-            int inDir = (i == 0) ? getDir(path[i], path[i + 1]) : getDir(path[i - 1], path[i]);
-            int outDir = getDir(path[i], path[i + 1]);
+            int inDir = getDir(path[i - 1], path[i]);
+            int outDir = (i + 1 < path.size()) ? getDir(path[i], path[i + 1]) : directionTowardBlock(cell, serverBlockOrigin);
 
             sf::Sprite sprite(texStraight);
             float rotation = 0.f;
@@ -57,11 +63,12 @@ void TileMap::build(const std::vector<std::vector<GridPos>>& allPaths, GridPos s
         }
     }
 
+    sf::Vector2f serverCenter = worldPos({ serverBlockOrigin.x + 1, serverBlockOrigin.y + 1 });
     sf::Vector2f serverTexSize = { (float)texServer.getSize().x, (float)texServer.getSize().y };
-    float serverVisualSize = cellSize * 2.f;
+    float serverVisualSize = cellSize * 3.f;
     serverSprite.setOrigin({ serverTexSize.x / 2.f, serverTexSize.y / 2.f });
     serverSprite.setScale({ serverVisualSize / serverTexSize.x, serverVisualSize / serverTexSize.y });
-    serverSprite.setPosition(worldPos(serverPos));
+    serverSprite.setPosition(serverCenter);
 }
 
 void TileMap::draw(sf::RenderWindow& window) {

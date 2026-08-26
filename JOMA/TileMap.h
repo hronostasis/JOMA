@@ -6,7 +6,7 @@
 class TileMap {
 public:
     TileMap(float cellSize, sf::Vector2f origin);
-    void build(const std::vector<std::vector<GridPos>>& allPaths, GridPos serverPos);
+    void build(const std::vector<std::vector<GridPos>>& allPaths, GridPos serverBlockOrigin);
     void draw(sf::RenderWindow& window);
     sf::Vector2f worldPos(GridPos p) const;
 

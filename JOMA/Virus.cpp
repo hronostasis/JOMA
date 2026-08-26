@@ -16,7 +16,7 @@ Virus::Virus(VirusType type, sf::Vector2f position)
 {
     switch (type) {
     case VirusType::Circle: {
-        auto circle = std::make_unique<sf::CircleShape>(30.f);
+        auto circle = std::make_unique<sf::CircleShape>(16.f);
         circle->setFillColor(sf::Color(220, 40, 40));
         shape = std::move(circle);
         break;
@@ -24,21 +24,22 @@ Virus::Virus(VirusType type, sf::Vector2f position)
     case VirusType::Triangle: {
         auto triangle = std::make_unique<sf::ConvexShape>();
         triangle->setPointCount(3);
-        triangle->setPoint(0, { 0.f, -30.f });
-        triangle->setPoint(1, { -30.f, 30.f });
-        triangle->setPoint(2, { 30.f, 30.f });
+        triangle->setPoint(0, { 0.f, -16.f });
+        triangle->setPoint(1, { -16.f, 16.f });
+        triangle->setPoint(2, { 16.f, 16.f });
         triangle->setFillColor(sf::Color(230, 210, 30));
         shape = std::move(triangle);
         break;
     }
     case VirusType::Square: {
-        auto square = std::make_unique<sf::RectangleShape>(sf::Vector2f(60.f, 60.f));
+        auto square = std::make_unique<sf::RectangleShape>(sf::Vector2f(32.f, 32.f));
         square->setFillColor(sf::Color(40, 90, 220));
-        square->setOrigin({ 30.f, 30.f });
         shape = std::move(square);
         break;
     }
     }
+    sf::FloatRect bounds = shape->getLocalBounds();
+    shape->setOrigin({ bounds.position.x + bounds.size.x / 2.f, bounds.position.y + bounds.size.y / 2.f });
     shape->setOutlineThickness(3.f);
     shape->setOutlineColor(sf::Color::Transparent);
     shape->setPosition(position);

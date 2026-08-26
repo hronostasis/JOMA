@@ -31,6 +31,7 @@ public:
     void setPath(std::vector<sf::Vector2f> newPath);
     void update(float deltaTime);
     bool hasReachedEnd() const { return reachedEnd; }
+    void setScale(float scale) { shape->setScale({ scale, scale }); }
 private:
     VirusType type;
     std::unique_ptr<sf::Shape> shape;
