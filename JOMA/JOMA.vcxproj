@@ -150,6 +150,7 @@
     </Manifest>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Animation.cpp" />
     <ClCompile Include="Game.cpp" />
     <ClCompile Include="LevelSelectScene.cpp" />
     <ClCompile Include="main.cpp" />
@@ -158,15 +159,18 @@
     <ClCompile Include="PathGenerator.cpp" />
     <ClCompile Include="PlayingScene.cpp" />
     <ClCompile Include="TileMap.cpp" />
+    <ClCompile Include="Tower.cpp" />
     <ClCompile Include="Virus.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Animation.h" />
     <ClInclude Include="Game.h" />
     <ClInclude Include="LevelSelectScene.h" />
     <ClInclude Include="PathGenerator.h" />
     <ClInclude Include="PlayingScene.h" />
     <ClInclude Include="Scene.h" />
     <ClInclude Include="TileMap.h" />
+    <ClInclude Include="Tower.h" />
     <ClInclude Include="UI.h" />
     <ClInclude Include="Virus.h" />
   </ItemGroup>

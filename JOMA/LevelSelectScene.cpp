@@ -60,7 +60,7 @@ void LevelSelectScene::handleEvent(const sf::Event& event, Game& game) {
                     return;
                 }
                 if ((i + 1) <= unlockedLevel) {
-                    game.changeScene(std::make_unique<PlayingScene>());
+                    game.changeScene(std::make_unique<PlayingScene>(i + 1));
                     return;
                 }
             }
