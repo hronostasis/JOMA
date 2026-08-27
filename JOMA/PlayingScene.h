@@ -17,6 +17,12 @@ struct SpawnPoint {
     }
 };
 
+struct WallInfo {
+    std::unique_ptr<Tower> tower;
+    size_t pathIndex;
+    size_t blockIndex;
+};
+
 class PlayingScene : public Scene {
 public:
     PlayingScene(int levelNumber = 1);
@@ -36,7 +42,5 @@ private:
     std::vector<Virus> viruses;
     int virusBudget = 10;
 
-    std::unique_ptr<Tower> firewall;
-    size_t firewallPathIndex = SIZE_MAX;
-    size_t firewallBlockIndex = SIZE_MAX;
+    std::vector<WallInfo> firewalls;
 };

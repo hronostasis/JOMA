@@ -3,6 +3,7 @@
 #include <cstdlib>
 #include <random>
 #include <algorithm>
+#include <cmath>
 
 PlayingScene::PlayingScene(int level)
     : levelNumber(level), tileMap(cellSize, sf::Vector2f(80.f, 45.f))
@@ -44,17 +45,30 @@ PlayingScene::PlayingScene(int level)
         sp.sprite.setPosition(waypoints[0]);
     }
 
-    std::vector<size_t> eligible;
-    for (size_t p = 0; p < allPaths.size(); p++) if (allPaths[p].size() >= 4) eligible.push_back(p);
+    // случайное число Файрволов (2-5), распределённых по случайным путям
+    int totalFirewalls = 2 + (rand() % 4);
 
-    if (!eligible.empty()) {
-        static std::mt19937 rng(std::random_device{}());
-        std::uniform_int_distribution<size_t> pathPick(0, eligible.size() - 1);
-        size_t chosen = eligible[pathPick(rng)];
+    std::vector<size_t> eligiblePaths;
+    for (size_t p = 0; p < allPaths.size(); p++) if (allPaths[p].size() >= 4) eligiblePaths.push_back(p);
+
+    std::vector<std::vector<size_t>> usedIndicesPerPath(allPaths.size());
+    static std::mt19937 rng(std::random_device{}());
+
+    int placed = 0, attempts = 0;
+    while (placed < totalFirewalls && !eligiblePaths.empty() && attempts < totalFirewalls * 30) {
+        attempts++;
+        std::uniform_int_distribution<size_t> pathPick(0, eligiblePaths.size() - 1);
+        size_t chosen = eligiblePaths[pathPick(rng)];
         auto& path = allPaths[chosen];
 
         std::uniform_int_distribution<size_t> idxPick(1, path.size() - 2);
         size_t idx = idxPick(rng);
+
+        bool tooClose = false;
+        for (size_t used : usedIndicesPerPath[chosen]) {
+            if (std::abs((long long)used - (long long)idx) < 2) { tooClose = true; break; }
+        }
+        if (tooClose) continue;
 
         GridPos before = path[idx - 1];
         GridPos after = (idx + 1 < path.size()) ? path[idx + 1] : path[idx];
@@ -63,10 +77,15 @@ PlayingScene::PlayingScene(int level)
         sf::Vector2f pos = tileMap.worldPos(path[idx]);
         float rotation = horizontal ? 90.f : 0.f;
 
-        firewall = std::make_unique<Tower>(pos, rotation);
-        firewall->setDesiredSize(cellSize * 0.9f);
-        firewallPathIndex = chosen;
-        firewallBlockIndex = idx;
+        WallInfo wall;
+        wall.tower = std::make_unique<Tower>(pos, rotation);
+        wall.tower->setDesiredSize(cellSize * 0.9f);
+        wall.pathIndex = chosen;
+        wall.blockIndex = idx;
+        firewalls.push_back(std::move(wall));
+
+        usedIndicesPerPath[chosen].push_back(idx);
+        placed++;
     }
 }
 
@@ -82,9 +101,15 @@ void PlayingScene::handleEvent(const sf::Event& event, Game& game) {
                     Virus virus(sp.type, sp.waypoints[0]);
                     virus.setDesiredSize(cellSize * 0.9f);
                     virus.setPath(sp.waypoints);
-                    if (firewall && i == firewallPathIndex) {
-                        virus.setBlocker(firewall.get(), firewallBlockIndex);
+
+                    std::vector<std::pair<Tower*, size_t>> blockersForPath;
+                    for (auto& w : firewalls) {
+                        if (w.pathIndex == i) blockersForPath.push_back({ w.tower.get(), w.blockIndex });
                     }
+                    std::sort(blockersForPath.begin(), blockersForPath.end(),
+                        [](auto& a, auto& b) { return a.second < b.second; });
+                    virus.setBlockers(std::move(blockersForPath));
+
                     viruses.push_back(std::move(virus));
                     virusBudget--;
                 }
@@ -92,7 +117,7 @@ void PlayingScene::handleEvent(const sf::Event& event, Game& game) {
 
             for (auto& virus : viruses) {
                 if (virus.getGlobalBounds().contains(pos)) {
-                    //выбрать этот вирус
+                    // выбрать этот вирус
                 }
             }
         }
@@ -105,7 +130,9 @@ void PlayingScene::handleEvent(const sf::Event& event, Game& game) {
 }
 
 void PlayingScene::update(float deltaTime, Game& game) {
-    if (firewall) firewall->setAttacking(false);
+    for (auto& w : firewalls) {
+        if (w.tower && w.tower->isAlive()) w.tower->setAttacking(false);
+    }
 
     sf::Vector2f mousePos = game.getWindow().mapPixelToCoords(sf::Mouse::getPosition(game.getWindow()));
     for (auto& virus : viruses) {
@@ -113,19 +140,21 @@ void PlayingScene::update(float deltaTime, Game& game) {
         virus.update(deltaTime);
     }
 
-    if (firewall) firewall->update(deltaTime);
+    for (auto& w : firewalls) {
+        if (w.tower && w.tower->isAlive()) w.tower->update(deltaTime);
+    }
 
     viruses.erase(
         std::remove_if(viruses.begin(), viruses.end(), [](const Virus& v) { return !v.isAlive(); }),
         viruses.end()
     );
-
-    if (firewall && !firewall->isAlive()) firewall.reset();
 }
 
 void PlayingScene::render(sf::RenderWindow& window) {
     tileMap.draw(window);
-    if (firewall) firewall->draw(window);
+    for (auto& w : firewalls) {
+        if (w.tower && w.tower->isAlive()) w.tower->draw(window);
+    }
     for (auto& sp : spawnPoints) {
         sp.sprite.setColor(virusBudget > 0 ? sf::Color::White : sf::Color(255, 255, 255, 80));
         window.draw(sp.sprite);

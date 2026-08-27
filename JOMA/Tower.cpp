@@ -13,7 +13,7 @@ namespace {
     }
 }
 Tower::Tower(sf::Vector2f position, float rotationDegrees)
-    : stats{ 120.f, 12.f }, currentHealth(stats.health), sprite(firewallIdleTexture())
+    : stats{ 150.f, 15.f }, currentHealth(stats.health), sprite(firewallIdleTexture())
 {
     idleAnim = std::make_unique<Animation>(firewallIdleTexture(), 1, 1, 1.f);
     attackAnim = std::make_unique<Animation>(firewallAttackTexture(), 2, 3, 0.15f);

@@ -17,7 +17,7 @@ namespace {
 namespace {
     VirusStats getStatsForType(VirusType type) {
         switch (type) {
-        case VirusType::Circle:   return { 50.f,  60.f, 1.0f, 15.f };
+        case VirusType::Circle:   return { 50.f,  60.f, 1.0f, 10.f };
         case VirusType::Triangle: return { 25.f, 80.f, 1.8f,  8.f };
         case VirusType::Square:   return { 100.f,  30.f, 0.6f, 30.f };
         }
@@ -104,13 +104,23 @@ void Virus::setPath(std::vector<sf::Vector2f> newPath) {
     reachedEnd = path.size() <= 1;
 }
 
-void Virus::setBlocker(Tower* tower, size_t blockAtIndex) {
-    blocker = tower;
-    blockIndex = blockAtIndex;
+void Virus::setBlockers(std::vector<std::pair<Tower*, size_t>> blockersList) {
+    blockers = std::move(blockersList);
+    blockerCursor = 0;
 }
 
 void Virus::update(float deltaTime) {
-    bool isFighting = (blocker != nullptr && blocker->isAlive() && pathIndex == blockIndex);
+    while (blockerCursor < blockers.size()) {
+        Tower* t = blockers[blockerCursor].first;
+        size_t idx = blockers[blockerCursor].second;
+        if (!t || !t->isAlive() || pathIndex > idx) { blockerCursor++; continue; }
+        break;
+    }
+
+    bool isFighting = false;
+    if (blockerCursor < blockers.size() && pathIndex == blockers[blockerCursor].second) {
+        isFighting = true;
+    }
 
     if (useSprite) {
         Animation* anim = isFighting ? attackAnim.get() : idleAnim.get();
@@ -127,21 +137,19 @@ void Virus::update(float deltaTime) {
         anim->applyTo(*sprite);
     }
 
-    if (blocker && pathIndex == blockIndex) {
-        if (!blocker->isAlive()) {
-            blocker = nullptr;
+    if (isFighting) {
+        Tower* t = blockers[blockerCursor].first;
+        t->setAttacking(true);
+        attackTimer += deltaTime;
+        if (attackTimer >= 1.f / stats.attackSpeed) {
+            attackTimer = 0.f;
+            t->takeDamage(stats.attackPower);
+            takeDamage(t->getAttackPower());
         }
-        else {
-            blocker->setAttacking(true);
-            attackTimer += deltaTime;
-            if (attackTimer >= 1.f / stats.attackSpeed) {
-                attackTimer = 0.f;
-                blocker->takeDamage(stats.attackPower);
-                takeDamage(blocker->getAttackPower());
-            }
-            return;
-        }
+        return;
     }
+
+    if (reachedEnd || pathIndex >= path.size()) { reachedEnd = true; return; }
 
     if (reachedEnd || pathIndex >= path.size()) { reachedEnd = true; return; }
 

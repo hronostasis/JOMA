@@ -37,7 +37,7 @@ public:
 
     void takeDamage(float amount);
 
-    void setBlocker(Tower* tower, size_t blockAtIndex);
+    void setBlockers(std::vector<std::pair<Tower*, size_t>> blockersList);
     bool isBlocked() const { return blocker != nullptr; }
 
 private:
@@ -63,4 +63,6 @@ private:
     sf::Vector2f getPosition() const;
     void setPosition(sf::Vector2f pos);
     void applySpriteScale();
+    std::vector<std::pair<Tower*, size_t>> blockers;
+    size_t blockerCursor = 0;
 };
