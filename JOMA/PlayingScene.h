@@ -34,6 +34,7 @@ private:
     static constexpr int cols = 16;
     static constexpr int rows = 9;
     static constexpr float cellSize = 70.f;
+    static constexpr int fogRevealRadius = 2;
 
     int levelNumber;
     TileMap tileMap;

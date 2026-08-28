@@ -6,7 +6,7 @@
 #include <cmath>
 
 PlayingScene::PlayingScene(int level)
-    : levelNumber(level), tileMap(cellSize, sf::Vector2f(80.f, 45.f))
+    : levelNumber(level), tileMap(cellSize, sf::Vector2f(80.f, 45.f), cols, rows)
 {
     (void)spawnTexture.loadFromFile("assets/tiles/spawn_virus.png");
     viruses.reserve(virusBudget);
@@ -43,9 +43,10 @@ PlayingScene::PlayingScene(int level)
         sp.sprite.setOrigin({ texSize.x / 2.f, texSize.y / 2.f });
         sp.sprite.setScale({ cellSize / texSize.x, cellSize / texSize.y });
         sp.sprite.setPosition(waypoints[0]);
+
+        tileMap.revealCell(spawns[p].pos);
     }
 
-    // случайное число Файрволов (2-5), распределённых по случайным путям
     int totalFirewalls = 2 + (rand() % 4);
 
     std::vector<size_t> eligiblePaths;
@@ -138,6 +139,7 @@ void PlayingScene::update(float deltaTime, Game& game) {
     for (auto& virus : viruses) {
         virus.setHovered(virus.getGlobalBounds().contains(mousePos));
         virus.update(deltaTime);
+        if (virus.isAlive()) tileMap.revealAround(virus.getWorldPosition(), fogRevealRadius);
     }
 
     for (auto& w : firewalls) {
@@ -160,4 +162,5 @@ void PlayingScene::render(sf::RenderWindow& window) {
         window.draw(sp.sprite);
     }
     for (auto& virus : viruses) virus.draw(window);
+    tileMap.drawFog(window);
 }

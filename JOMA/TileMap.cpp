@@ -1,12 +1,16 @@
 #include "TileMap.h"
+#include <cmath>
 
-TileMap::TileMap(float cellSize, sf::Vector2f origin)
-    : cellSize(cellSize), origin(origin), serverSprite(texServer)
+TileMap::TileMap(float cellSize, sf::Vector2f origin, int cols, int rows)
+    : cols(cols), rows(rows), cellSize(cellSize), origin(origin), serverSprite(texServer)
 {
     (void)texStraight.loadFromFile("assets/tiles/path_straight.png");
     (void)texCorner.loadFromFile("assets/tiles/path_corner.png");
     (void)texServer.loadFromFile("assets/tiles/entity_core.png");
+    (void)texHidden.loadFromFile("assets/tiles/hidden_cell.png");
     serverSprite.setTexture(texServer, true);
+
+    revealed.assign(cols, std::vector<bool>(rows, false));
 }
 
 sf::Vector2f TileMap::worldPos(GridPos p) const {
@@ -74,4 +78,35 @@ void TileMap::build(const std::vector<std::vector<GridPos>>& allPaths, GridPos s
 void TileMap::draw(sf::RenderWindow& window) {
     for (auto& sprite : tileSprites) window.draw(sprite);
     window.draw(serverSprite);
+}
+
+void TileMap::revealCell(GridPos p) {
+    if (p.x < 0 || p.x >= cols || p.y < 0 || p.y >= rows) return;
+    revealed[p.x][p.y] = true;
+}
+
+void TileMap::revealAround(sf::Vector2f worldPosition, int radiusCells) {
+    int cx = (int)std::floor((worldPosition.x - origin.x) / cellSize);
+    int cy = (int)std::floor((worldPosition.y - origin.y) / cellSize);
+
+    for (int dx = -radiusCells; dx <= radiusCells; dx++) {
+        for (int dy = -radiusCells; dy <= radiusCells; dy++) {
+            if (dx * dx + dy * dy > radiusCells * radiusCells) continue;
+            revealCell({ cx + dx, cy + dy });
+        }
+    }
+}
+
+void TileMap::drawFog(sf::RenderWindow& window) {
+    sf::Sprite fogSprite(texHidden);
+    sf::Vector2f texSize = { (float)texHidden.getSize().x, (float)texHidden.getSize().y };
+    fogSprite.setScale({ cellSize / texSize.x, cellSize / texSize.y });
+
+    for (int x = 0; x < cols; x++) {
+        for (int y = 0; y < rows; y++) {
+            if (revealed[x][y]) continue;
+            fogSprite.setPosition({ origin.x + x * cellSize, origin.y + y * cellSize });
+            window.draw(fogSprite);
+        }
+    }
 }

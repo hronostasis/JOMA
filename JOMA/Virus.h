@@ -33,6 +33,7 @@ public:
     float getMoveSpeed() const { return stats.moveSpeed; }
     float getAttackSpeed() const { return stats.attackSpeed; }
     float getAttackPower() const { return stats.attackPower; }
+    sf::Vector2f getWorldPosition() const { return getPosition(); }
     bool isAlive() const { return currentHealth > 0.f; }
     bool isRemovable() const;
 
