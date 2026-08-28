@@ -18,8 +18,7 @@ private:
     int cols, rows;
     float cellSize;
     sf::Vector2f origin;
-    sf::Texture texStraight, texCorner, texServer, texHidden;
+    sf::Texture texStraight, texCorner, texHidden;
     std::vector<sf::Sprite> tileSprites;
-    sf::Sprite serverSprite;
     std::vector<std::vector<bool>> revealed;
 };

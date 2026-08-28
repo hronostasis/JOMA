@@ -3,6 +3,7 @@
 #include <memory>
 #include <vector>
 #include "Animation.h"
+#include "Damageable.h"
 
 enum class VirusType { Circle, Triangle, Square };
 
@@ -12,8 +13,6 @@ struct VirusStats {
     float attackSpeed;
     float attackPower;
 };
-
-class Tower;
 
 class Virus {
 public:
@@ -27,19 +26,19 @@ public:
     void setPath(std::vector<sf::Vector2f> newPath);
     void update(float deltaTime);
     bool hasReachedEnd() const { return reachedEnd; }
+    sf::Vector2f getWorldPosition() const { return getPosition(); }
 
     float getHealth() const { return currentHealth; }
     float getMaxHealth() const { return stats.health; }
     float getMoveSpeed() const { return stats.moveSpeed; }
     float getAttackSpeed() const { return stats.attackSpeed; }
     float getAttackPower() const { return stats.attackPower; }
-    sf::Vector2f getWorldPosition() const { return getPosition(); }
     bool isAlive() const { return currentHealth > 0.f; }
     bool isRemovable() const;
 
     void takeDamage(float amount);
 
-    void setBlockers(std::vector<std::pair<Tower*, size_t>> blockersList);
+    void setBlockers(std::vector<std::pair<Damageable*, size_t>> blockersList);
 
 private:
     VirusType type;
@@ -57,7 +56,7 @@ private:
     size_t pathIndex = 0;
     bool reachedEnd = false;
 
-    std::vector<std::pair<Tower*, size_t>> blockers;
+    std::vector<std::pair<Damageable*, size_t>> blockers;
     size_t blockerCursor = 0;
     float attackTimer = 0.f;
 

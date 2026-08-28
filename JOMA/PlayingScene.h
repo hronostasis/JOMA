@@ -2,8 +2,10 @@
 #include "Scene.h"
 #include "Virus.h"
 #include "Tower.h"
+#include "Server.h"
 #include "TileMap.h"
 #include "PathGenerator.h"
+#include "UI.h"
 #include <vector>
 #include <memory>
 
@@ -19,9 +21,11 @@ struct SpawnPoint {
 
 struct WallInfo {
     std::unique_ptr<Tower> tower;
-    size_t pathIndex;
-    size_t blockIndex;
+    size_t pathIndex = 0;
+    size_t blockIndex = 0;
 };
+
+enum class LevelResult { None, Victory, Defeat };
 
 class PlayingScene : public Scene {
 public:
@@ -38,10 +42,19 @@ private:
 
     int levelNumber;
     TileMap tileMap;
+    std::unique_ptr<Server> server;
     sf::Texture spawnTexture;
     std::vector<SpawnPoint> spawnPoints;
     std::vector<Virus> viruses;
     int virusBudget = 10;
 
     std::vector<WallInfo> firewalls;
+
+    LevelResult result = LevelResult::None;
+    sf::Font bannerFont;
+    sf::RectangleShape btnA, btnB;
+    sf::Text btnAText, btnBText;
+
+    void setupBanner();
+    void checkWinLoseConditions();
 };

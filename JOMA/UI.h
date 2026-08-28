@@ -14,3 +14,27 @@ inline void centerAndFitText(sf::Text& text, const sf::RectangleShape& button, u
     text.setOrigin({ bounds.position.x + bounds.size.x / 2.f, bounds.position.y + bounds.size.y / 2.f });
     text.setPosition({ button.getPosition().x + button.getSize().x / 2.f, button.getPosition().y + button.getSize().y / 2.f });
 }
+inline void drawNeonText(sf::RenderWindow& window, sf::Font& font, const std::string& str,
+    unsigned size, sf::Vector2f center, sf::Color color)
+{
+    sf::Text glow(font, str, size);
+    glow.setFillColor(sf::Color::Transparent);
+    glow.setOutlineColor(sf::Color(color.r, color.g, color.b, 60));
+
+    for (float thickness : { 10.f, 6.f, 3.f }) {
+        glow.setOutlineThickness(thickness);
+        sf::FloatRect b = glow.getLocalBounds();
+        glow.setOrigin({ b.position.x + b.size.x / 2.f, b.position.y + b.size.y / 2.f });
+        glow.setPosition(center);
+        window.draw(glow);
+    }
+
+    sf::Text core(font, str, size);
+    core.setFillColor(sf::Color::White);
+    core.setOutlineColor(color);
+    core.setOutlineThickness(2.f);
+    sf::FloatRect b = core.getLocalBounds();
+    core.setOrigin({ b.position.x + b.size.x / 2.f, b.position.y + b.size.y / 2.f });
+    core.setPosition(center);
+    window.draw(core);
+}

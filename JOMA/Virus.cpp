@@ -1,11 +1,10 @@
 #include "Virus.h"
-#include "Tower.h"
 #include <cmath>
 
 namespace {
     VirusStats getStatsForType(VirusType type) {
         switch (type) {
-        case VirusType::Circle:   return { 50.f,  60.f, 1.0f, 10.f };
+        case VirusType::Circle:   return { 50.f,  40.f, 1.0f, 10.f };
         case VirusType::Triangle: return { 25.f, 80.f, 1.8f,  8.f };
         case VirusType::Square:   return { 100.f,  30.f, 0.6f, 30.f };
         }
@@ -109,7 +108,7 @@ void Virus::setPath(std::vector<sf::Vector2f> newPath) {
     reachedEnd = path.size() <= 1;
 }
 
-void Virus::setBlockers(std::vector<std::pair<Tower*, size_t>> blockersList) {
+void Virus::setBlockers(std::vector<std::pair<Damageable*, size_t>> blockersList) {
     blockers = std::move(blockersList);
     blockerCursor = 0;
 }
@@ -138,9 +137,9 @@ void Virus::update(float deltaTime) {
     }
 
     while (blockerCursor < blockers.size()) {
-        Tower* t = blockers[blockerCursor].first;
+        Damageable* d = blockers[blockerCursor].first;
         size_t idx = blockers[blockerCursor].second;
-        if (!t || !t->isAlive() || pathIndex > idx) { blockerCursor++; continue; }
+        if (!d || !d->isAlive() || pathIndex > idx) { blockerCursor++; continue; }
         break;
     }
 
@@ -165,13 +164,13 @@ void Virus::update(float deltaTime) {
     }
 
     if (isFighting) {
-        Tower* t = blockers[blockerCursor].first;
-        t->setAttacking(true);
+        Damageable* d = blockers[blockerCursor].first;
+        d->setAttacking(true);
         attackTimer += deltaTime;
         if (attackTimer >= 1.f / stats.attackSpeed) {
             attackTimer = 0.f;
-            t->takeDamage(stats.attackPower);
-            takeDamage(t->getAttackPower());
+            d->takeDamage(stats.attackPower);
+            takeDamage(d->getAttackPower());
         }
         return;
     }

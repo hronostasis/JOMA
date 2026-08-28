@@ -4,32 +4,24 @@
 #include "Animation.h"
 #include "Damageable.h"
 
-struct TowerStats {
-    float health;
-    float attackPower;
-};
-
-class Tower : public Damageable {
+class Server : public Damageable {
 public:
-    Tower(sf::Vector2f position, float rotationDegrees);
+    Server(sf::Vector2f position);
 
     void update(float deltaTime);
     void draw(sf::RenderWindow& window);
     void setDesiredSize(float worldSize);
-    void setAttacking(bool value) override { isAttacking = value; }
 
     void takeDamage(float amount) override;
     bool isAlive() const override { return currentHealth > 0.f; }
     bool isDeathFinished() const { return deathAnim && deathAnim->isFinished(); }
-    float getAttackPower() const override { return stats.attackPower; }
 
 private:
-    TowerStats stats;
+    float maxHealth = 500.f;
     float currentHealth;
 
     sf::Sprite sprite;
-    std::unique_ptr<Animation> idleAnim, attackAnim, deathAnim;
-    bool isAttacking = false;
+    std::unique_ptr<Animation> idleAnim, deathAnim;
     float desiredSize = 0.f;
 
     void applyScale();

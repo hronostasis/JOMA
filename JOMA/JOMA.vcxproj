@@ -158,17 +158,20 @@
     <ClCompile Include="MainMenuScene.h" />
     <ClCompile Include="PathGenerator.cpp" />
     <ClCompile Include="PlayingScene.cpp" />
+    <ClCompile Include="Server.cpp" />
     <ClCompile Include="TileMap.cpp" />
     <ClCompile Include="Tower.cpp" />
     <ClCompile Include="Virus.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Animation.h" />
+    <ClInclude Include="Damageable.h" />
     <ClInclude Include="Game.h" />
     <ClInclude Include="LevelSelectScene.h" />
     <ClInclude Include="PathGenerator.h" />
     <ClInclude Include="PlayingScene.h" />
     <ClInclude Include="Scene.h" />
+    <ClInclude Include="Server.h" />
     <ClInclude Include="TileMap.h" />
     <ClInclude Include="Tower.h" />
     <ClInclude Include="UI.h" />

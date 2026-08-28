@@ -4,11 +4,14 @@
 #include <random>
 #include <algorithm>
 #include <cmath>
+#include "LevelSelectScene.h"
 
 PlayingScene::PlayingScene(int level)
-    : levelNumber(level), tileMap(cellSize, sf::Vector2f(80.f, 45.f), cols, rows)
+    : levelNumber(level), tileMap(cellSize, sf::Vector2f(80.f, 45.f), cols, rows),
+    btnAText(bannerFont), btnBText(bannerFont)
 {
     (void)spawnTexture.loadFromFile("assets/tiles/spawn_virus.png");
+    (void)bannerFont.openFromFile("C:/Windows/Fonts/consola.ttf");
     viruses.reserve(virusBudget);
 
     GridPos serverBlockOrigin = { cols / 2 - 1, rows / 2 - 1 };
@@ -17,6 +20,10 @@ PlayingScene::PlayingScene(int level)
     std::vector<std::vector<GridPos>> allPaths = generateAllPaths(spawns, serverBlockOrigin, cols, rows);
 
     tileMap.build(allPaths, serverBlockOrigin);
+
+    sf::Vector2f serverCenter = tileMap.worldPos({ serverBlockOrigin.x + 1, serverBlockOrigin.y + 1 });
+    server = std::make_unique<Server>(serverCenter);
+    server->setDesiredSize(cellSize * 3.f);
 
     std::vector<VirusType> allowedTypes;
     if (levelNumber == 1) allowedTypes = { VirusType::Circle };
@@ -48,7 +55,6 @@ PlayingScene::PlayingScene(int level)
     }
 
     int totalFirewalls = 2 + (rand() % 4);
-
     std::vector<size_t> eligiblePaths;
     for (size_t p = 0; p < allPaths.size(); p++) if (allPaths[p].size() >= 3) eligiblePaths.push_back(p);
 
@@ -88,12 +94,67 @@ PlayingScene::PlayingScene(int level)
         usedIndicesPerPath[chosen].push_back(idx);
         placed++;
     }
+
+    setupBanner();
+}
+
+void PlayingScene::setupBanner() {
+    btnA.setSize({ 240.f, 60.f });
+    btnA.setFillColor(sf::Color(45, 42, 60));
+    btnA.setOutlineThickness(2.f);
+    btnA.setOutlineColor(sf::Color(120, 110, 220));
+    btnA.setPosition({ 1280.f / 2.f - 260.f, 620.f });
+
+    btnB.setSize({ 240.f, 60.f });
+    btnB.setFillColor(sf::Color(45, 42, 60));
+    btnB.setOutlineThickness(2.f);
+    btnB.setOutlineColor(sf::Color(120, 110, 220));
+    btnB.setPosition({ 1280.f / 2.f + 20.f, 620.f });
+
+    btnAText.setString("Level panel");
+    btnAText.setFillColor(sf::Color::White);
+    centerAndFitText(btnAText, btnA);
+
+    btnBText.setFillColor(sf::Color::White);
+}
+
+void PlayingScene::checkWinLoseConditions() {
+    if (result != LevelResult::None) return;
+
+    if (!server->isAlive() && server->isDeathFinished()) {
+        result = LevelResult::Victory;
+        btnBText.setString("Next level");
+        centerAndFitText(btnBText, btnB);
+        return;
+    }
+
+    if (virusBudget <= 0 && viruses.empty() && server->isAlive()) {
+        result = LevelResult::Defeat;
+        btnBText.setString("Again");
+        centerAndFitText(btnBText, btnB);
+        return;
+    }
 }
 
 void PlayingScene::handleEvent(const sf::Event& event, Game& game) {
     if (const auto* mp = event.getIf<sf::Event::MouseButtonPressed>()) {
         if (mp->button == sf::Mouse::Button::Left) {
             sf::Vector2f pos = game.getWindow().mapPixelToCoords(mp->position);
+
+            if (result != LevelResult::None) {
+                if (btnA.getGlobalBounds().contains(pos)) {
+                    game.changeScene(std::make_unique<LevelSelectScene>());
+                    return;
+                }
+                if (btnB.getGlobalBounds().contains(pos)) {
+                    if (result == LevelResult::Victory)
+                        game.changeScene(std::make_unique<PlayingScene>(levelNumber + 1));
+                    else
+                        game.changeScene(std::make_unique<PlayingScene>(levelNumber));
+                    return;
+                }
+                return;
+            }
 
             for (size_t i = 0; i < spawnPoints.size(); i++) {
                 if (virusBudget <= 0) continue;
@@ -103,12 +164,15 @@ void PlayingScene::handleEvent(const sf::Event& event, Game& game) {
                     virus.setDesiredSize(cellSize * 0.9f);
                     virus.setPath(sp.waypoints);
 
-                    std::vector<std::pair<Tower*, size_t>> blockersForPath;
+                    std::vector<std::pair<Damageable*, size_t>> blockersForPath;
                     for (auto& w : firewalls) {
                         if (w.pathIndex == i) blockersForPath.push_back({ w.tower.get(), w.blockIndex });
                     }
                     std::sort(blockersForPath.begin(), blockersForPath.end(),
                         [](auto& a, auto& b) { return a.second < b.second; });
+
+                    blockersForPath.push_back({ server.get(), sp.waypoints.size() - 1 });
+
                     virus.setBlockers(std::move(blockersForPath));
 
                     viruses.push_back(std::move(virus));
@@ -131,6 +195,16 @@ void PlayingScene::handleEvent(const sf::Event& event, Game& game) {
 }
 
 void PlayingScene::update(float deltaTime, Game& game) {
+    if (result != LevelResult::None) {
+        sf::Vector2f mousePos = game.getWindow().mapPixelToCoords(sf::Mouse::getPosition(game.getWindow()));
+        bool hoverA = btnA.getGlobalBounds().contains(mousePos);
+        bool hoverB = btnB.getGlobalBounds().contains(mousePos);
+        btnA.setFillColor(hoverA ? sf::Color(70, 65, 110) : sf::Color(45, 42, 60));
+        btnB.setFillColor(hoverB ? sf::Color(70, 65, 110) : sf::Color(45, 42, 60));
+        server->update(deltaTime);
+        return;
+    }
+
     for (auto& w : firewalls) {
         if (w.tower && w.tower->isAlive()) w.tower->setAttacking(false);
     }
@@ -146,10 +220,14 @@ void PlayingScene::update(float deltaTime, Game& game) {
         if (w.tower && (w.tower->isAlive() || !w.tower->isDeathFinished())) w.tower->update(deltaTime);
     }
 
+    server->update(deltaTime);
+
     viruses.erase(
         std::remove_if(viruses.begin(), viruses.end(), [](const Virus& v) { return v.isRemovable(); }),
         viruses.end()
     );
+
+    checkWinLoseConditions();
 }
 
 void PlayingScene::render(sf::RenderWindow& window) {
@@ -157,10 +235,26 @@ void PlayingScene::render(sf::RenderWindow& window) {
     for (auto& w : firewalls) {
         if (w.tower && (w.tower->isAlive() || !w.tower->isDeathFinished())) w.tower->draw(window);
     }
+    server->draw(window);
     for (auto& sp : spawnPoints) {
         sp.sprite.setColor(virusBudget > 0 ? sf::Color::White : sf::Color(255, 255, 255, 80));
         window.draw(sp.sprite);
     }
     for (auto& virus : viruses) virus.draw(window);
     tileMap.drawFog(window);
+
+    if (result != LevelResult::None) {
+        sf::RectangleShape overlay({ 1280.f, 900.f });
+        overlay.setFillColor(sf::Color(0, 0, 0, 160));
+        window.draw(overlay);
+
+        sf::Color neon = (result == LevelResult::Victory) ? sf::Color(60, 200, 255) : sf::Color(230, 40, 60);
+        std::string title = (result == LevelResult::Victory) ? "result: VICTORY" : "result: DEFEAT";
+        drawNeonText(window, bannerFont, title, 90, { 1280.f / 2.f, 380.f }, neon);
+
+        window.draw(btnA);
+        window.draw(btnAText);
+        window.draw(btnB);
+        window.draw(btnBText);
+    }
 }

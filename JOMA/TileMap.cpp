@@ -2,13 +2,11 @@
 #include <cmath>
 
 TileMap::TileMap(float cellSize, sf::Vector2f origin, int cols, int rows)
-    : cols(cols), rows(rows), cellSize(cellSize), origin(origin), serverSprite(texServer)
+    : cols(cols), rows(rows), cellSize(cellSize), origin(origin)
 {
     (void)texStraight.loadFromFile("assets/tiles/path_straight.png");
     (void)texCorner.loadFromFile("assets/tiles/path_corner.png");
-    (void)texServer.loadFromFile("assets/tiles/entity_core.png");
     (void)texHidden.loadFromFile("assets/tiles/hidden_cell.png");
-    serverSprite.setTexture(texServer, true);
 
     revealed.assign(cols, std::vector<bool>(rows, false));
 }
@@ -66,18 +64,10 @@ void TileMap::build(const std::vector<std::vector<GridPos>>& allPaths, GridPos s
             tileSprites.push_back(sprite);
         }
     }
-
-    sf::Vector2f serverCenter = worldPos({ serverBlockOrigin.x + 1, serverBlockOrigin.y + 1 });
-    sf::Vector2f serverTexSize = { (float)texServer.getSize().x, (float)texServer.getSize().y };
-    float serverVisualSize = cellSize * 3.f;
-    serverSprite.setOrigin({ serverTexSize.x / 2.f, serverTexSize.y / 2.f });
-    serverSprite.setScale({ serverVisualSize / serverTexSize.x, serverVisualSize / serverTexSize.y });
-    serverSprite.setPosition(serverCenter);
 }
 
 void TileMap::draw(sf::RenderWindow& window) {
     for (auto& sprite : tileSprites) window.draw(sprite);
-    window.draw(serverSprite);
 }
 
 void TileMap::revealCell(GridPos p) {
