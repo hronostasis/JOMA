@@ -50,7 +50,7 @@ PlayingScene::PlayingScene(int level)
     int totalFirewalls = 2 + (rand() % 4);
 
     std::vector<size_t> eligiblePaths;
-    for (size_t p = 0; p < allPaths.size(); p++) if (allPaths[p].size() >= 4) eligiblePaths.push_back(p);
+    for (size_t p = 0; p < allPaths.size(); p++) if (allPaths[p].size() >= 3) eligiblePaths.push_back(p);
 
     std::vector<std::vector<size_t>> usedIndicesPerPath(allPaths.size());
     static std::mt19937 rng(std::random_device{}());

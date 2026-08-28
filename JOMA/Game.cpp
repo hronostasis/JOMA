@@ -1,7 +1,7 @@
 #include "Game.h"
 #include "MainMenuScene.h"
 
-Game::Game() : window(sf::VideoMode({ 1280u, 720u }), "JOMA") {
+Game::Game() : window(sf::VideoMode({ 1280u, 900u }), "JOMA") {
     currentScene = std::make_unique<MainMenuScene>();
 }
 
