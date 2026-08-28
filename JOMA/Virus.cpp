@@ -3,6 +3,15 @@
 #include <cmath>
 
 namespace {
+    VirusStats getStatsForType(VirusType type) {
+        switch (type) {
+        case VirusType::Circle:   return { 50.f,  60.f, 1.0f, 10.f };
+        case VirusType::Triangle: return { 25.f, 80.f, 1.8f,  8.f };
+        case VirusType::Square:   return { 100.f,  30.f, 0.6f, 30.f };
+        }
+        return {};
+    }
+
     sf::Texture& middleIdleTexture() {
         static sf::Texture tex;
         static bool loaded = ((void)tex.loadFromFile("assets/tiles/middle_idle.png"), true);
@@ -13,15 +22,10 @@ namespace {
         static bool loaded = ((void)tex.loadFromFile("assets/tiles/middle_attack.png"), true);
         return tex;
     }
-}
-namespace {
-    VirusStats getStatsForType(VirusType type) {
-        switch (type) {
-        case VirusType::Circle:   return { 50.f,  60.f, 1.0f, 10.f };
-        case VirusType::Triangle: return { 25.f, 80.f, 1.8f,  8.f };
-        case VirusType::Square:   return { 100.f,  30.f, 0.6f, 30.f };
-        }
-        return {};
+    sf::Texture& middleDeathTexture() {
+        static sf::Texture tex;
+        static bool loaded = ((void)tex.loadFromFile("assets/tiles/middle_death.png"), true);
+        return tex;
     }
 }
 
@@ -32,6 +36,7 @@ Virus::Virus(VirusType type, sf::Vector2f position)
         useSprite = true;
         idleAnim = std::make_unique<Animation>(middleIdleTexture(), 1, 1, 1.f);
         attackAnim = std::make_unique<Animation>(middleAttackTexture(), 2, 2, 0.15f);
+        deathAnim = std::make_unique<Animation>(middleDeathTexture(), 3, 3, 0.12f, false);
 
         sprite = std::make_unique<sf::Sprite>(middleIdleTexture());
         idleAnim->applyTo(*sprite);
@@ -64,7 +69,7 @@ Virus::Virus(VirusType type, sf::Vector2f position)
 
 void Virus::draw(sf::RenderWindow& window) {
     if (useSprite) window.draw(*sprite);
-    else window.draw(*shape);
+    else if (isAlive()) window.draw(*shape);
 }
 
 sf::FloatRect Virus::getGlobalBounds() const {
@@ -109,7 +114,29 @@ void Virus::setBlockers(std::vector<std::pair<Tower*, size_t>> blockersList) {
     blockerCursor = 0;
 }
 
+bool Virus::isRemovable() const {
+    if (currentHealth > 0.f) return false;
+    if (!useSprite) return true;
+    return deathAnim && deathAnim->isFinished();
+}
+
 void Virus::update(float deltaTime) {
+    if (currentHealth <= 0.f) {
+        if (useSprite) {
+            if (&sprite->getTexture() != &middleDeathTexture()) {
+                sprite->setTexture(middleDeathTexture(), false);
+                deathAnim->reset();
+                deathAnim->applyTo(*sprite);
+                sf::IntRect rect = sprite->getTextureRect();
+                sprite->setOrigin({ rect.size.x / 2.f, rect.size.y / 2.f });
+                applySpriteScale();
+            }
+            deathAnim->update(deltaTime);
+            deathAnim->applyTo(*sprite);
+        }
+        return;
+    }
+
     while (blockerCursor < blockers.size()) {
         Tower* t = blockers[blockerCursor].first;
         size_t idx = blockers[blockerCursor].second;
@@ -148,8 +175,6 @@ void Virus::update(float deltaTime) {
         }
         return;
     }
-
-    if (reachedEnd || pathIndex >= path.size()) { reachedEnd = true; return; }
 
     if (reachedEnd || pathIndex >= path.size()) { reachedEnd = true; return; }
 

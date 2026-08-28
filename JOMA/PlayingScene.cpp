@@ -141,11 +141,11 @@ void PlayingScene::update(float deltaTime, Game& game) {
     }
 
     for (auto& w : firewalls) {
-        if (w.tower && w.tower->isAlive()) w.tower->update(deltaTime);
+        if (w.tower && (w.tower->isAlive() || !w.tower->isDeathFinished())) w.tower->update(deltaTime);
     }
 
     viruses.erase(
-        std::remove_if(viruses.begin(), viruses.end(), [](const Virus& v) { return !v.isAlive(); }),
+        std::remove_if(viruses.begin(), viruses.end(), [](const Virus& v) { return v.isRemovable(); }),
         viruses.end()
     );
 }
@@ -153,7 +153,7 @@ void PlayingScene::update(float deltaTime, Game& game) {
 void PlayingScene::render(sf::RenderWindow& window) {
     tileMap.draw(window);
     for (auto& w : firewalls) {
-        if (w.tower && w.tower->isAlive()) w.tower->draw(window);
+        if (w.tower && (w.tower->isAlive() || !w.tower->isDeathFinished())) w.tower->draw(window);
     }
     for (auto& sp : spawnPoints) {
         sp.sprite.setColor(virusBudget > 0 ? sf::Color::White : sf::Color(255, 255, 255, 80));

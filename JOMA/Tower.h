@@ -19,6 +19,7 @@ public:
 
     void takeDamage(float amount);
     bool isAlive() const { return currentHealth > 0.f; }
+    bool isDeathFinished() const { return deathAnim && deathAnim->isFinished(); }
     float getAttackPower() const { return stats.attackPower; }
 
 private:
@@ -26,7 +27,7 @@ private:
     float currentHealth;
 
     sf::Sprite sprite;
-    std::unique_ptr<Animation> idleAnim, attackAnim;
+    std::unique_ptr<Animation> idleAnim, attackAnim, deathAnim;
     bool isAttacking = false;
     float desiredSize = 0.f;
 

@@ -34,11 +34,11 @@ public:
     float getAttackSpeed() const { return stats.attackSpeed; }
     float getAttackPower() const { return stats.attackPower; }
     bool isAlive() const { return currentHealth > 0.f; }
+    bool isRemovable() const;
 
     void takeDamage(float amount);
 
     void setBlockers(std::vector<std::pair<Tower*, size_t>> blockersList);
-    bool isBlocked() const { return blocker != nullptr; }
 
 private:
     VirusType type;
@@ -49,20 +49,18 @@ private:
 
     bool useSprite = false;
     std::unique_ptr<sf::Sprite> sprite;
-    std::unique_ptr<Animation> idleAnim, attackAnim;
+    std::unique_ptr<Animation> idleAnim, attackAnim, deathAnim;
     float desiredSize = 0.f;
 
     std::vector<sf::Vector2f> path;
     size_t pathIndex = 0;
     bool reachedEnd = false;
 
-    Tower* blocker = nullptr;
-    size_t blockIndex = SIZE_MAX;
+    std::vector<std::pair<Tower*, size_t>> blockers;
+    size_t blockerCursor = 0;
     float attackTimer = 0.f;
 
     sf::Vector2f getPosition() const;
     void setPosition(sf::Vector2f pos);
     void applySpriteScale();
-    std::vector<std::pair<Tower*, size_t>> blockers;
-    size_t blockerCursor = 0;
 };
