@@ -11,6 +11,11 @@ namespace {
         static bool loaded = ((void)tex.loadFromFile("assets/tiles/core_death.png"), true);
         return tex;
     }
+    sf::Texture& coreWoundTexture() {
+        static sf::Texture tex;
+        static bool loaded = ((void)tex.loadFromFile("assets/tiles/core_wound.png"), true);
+        return tex;
+    }
 }
 
 Server::Server(sf::Vector2f position)
@@ -18,6 +23,7 @@ Server::Server(sf::Vector2f position)
 {
     idleAnim = std::make_unique<Animation>(coreIdleTexture(), 1, 1, 1.f);
     deathAnim = std::make_unique<Animation>(coreDeathTexture(), 4, 5, 0.08f, false);
+    woundAnim = std::make_unique<Animation>(coreWoundTexture(), 1, 2, 0.1f, false);
 
     idleAnim->applyTo(sprite);
     sf::IntRect rect = sprite.getTextureRect();
@@ -25,19 +31,43 @@ Server::Server(sf::Vector2f position)
     sprite.setPosition(position);
 }
 
+void Server::switchTexture(sf::Texture& tex, Animation* anim) {
+    sprite.setTexture(tex, false);
+    anim->applyTo(sprite);
+    sf::IntRect rect = sprite.getTextureRect();
+    sprite.setOrigin({ rect.size.x / 2.f, rect.size.y / 2.f });
+    applyScale();
+}
+
 void Server::update(float deltaTime) {
     if (currentHealth <= 0.f) {
         if (&sprite.getTexture() != &coreDeathTexture()) {
-            sprite.setTexture(coreDeathTexture(), false);
             deathAnim->reset();
-            deathAnim->applyTo(sprite);
-            sf::IntRect rect = sprite.getTextureRect();
-            sprite.setOrigin({ rect.size.x / 2.f, rect.size.y / 2.f });
-            applyScale();
+            switchTexture(coreDeathTexture(), deathAnim.get());
         }
         deathAnim->update(deltaTime);
         deathAnim->applyTo(sprite);
+        return;
     }
+
+    if (showWound) {
+        if (&sprite.getTexture() != &coreWoundTexture()) {
+            switchTexture(coreWoundTexture(), woundAnim.get());
+        }
+        woundAnim->update(deltaTime);
+        woundAnim->applyTo(sprite);
+        if (woundAnim->isFinished()) {
+            showWound = false;
+            switchTexture(coreIdleTexture(), idleAnim.get());
+        }
+        return;
+    }
+
+    if (&sprite.getTexture() != &coreIdleTexture()) {
+        switchTexture(coreIdleTexture(), idleAnim.get());
+    }
+    idleAnim->update(deltaTime);
+    idleAnim->applyTo(sprite);
 }
 
 void Server::draw(sf::RenderWindow& window) {
@@ -59,4 +89,8 @@ void Server::applyScale() {
 void Server::takeDamage(float amount) {
     currentHealth -= amount;
     if (currentHealth < 0.f) currentHealth = 0.f;
+    if (currentHealth > 0.f) {
+        showWound = true;
+        woundAnim->reset();
+    }
 }

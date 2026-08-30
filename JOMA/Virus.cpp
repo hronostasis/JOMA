@@ -4,9 +4,9 @@
 namespace {
     VirusStats getStatsForType(VirusType type) {
         switch (type) {
-        case VirusType::Circle:   return { 50.f,  40.f, 1.0f, 10.f };
-        case VirusType::Triangle: return { 25.f, 80.f, 1.8f,  8.f };
-        case VirusType::Square:   return { 100.f,  30.f, 0.6f, 30.f };
+        case VirusType::Circle:   return { 100.f,  80.f, 1.0f, 15.f };
+        case VirusType::Triangle: return { 50.f, 140.f, 1.8f,  8.f };
+        case VirusType::Square:   return { 200.f,  40.f, 0.6f, 30.f };
         }
         return {};
     }
@@ -26,38 +26,55 @@ namespace {
         static bool loaded = ((void)tex.loadFromFile("assets/tiles/middle_death.png"), true);
         return tex;
     }
+
+    sf::Texture& arrowIdleTexture() {
+        static sf::Texture tex;
+        static bool loaded = ((void)tex.loadFromFile("assets/tiles/arrow_idle.png"), true);
+        return tex;
+    }
+    sf::Texture& arrowAttackTexture() {
+        static sf::Texture tex;
+        static bool loaded = ((void)tex.loadFromFile("assets/tiles/arrow_attack.png"), true);
+        return tex;
+    }
+    sf::Texture& arrowDeathTexture() {
+        static sf::Texture tex;
+        static bool loaded = ((void)tex.loadFromFile("assets/tiles/arrow_death.png"), true);
+        return tex;
+    }
+
+    sf::Texture& idleTextureFor(VirusType t) { return t == VirusType::Triangle ? arrowIdleTexture() : middleIdleTexture(); }
+    sf::Texture& attackTextureFor(VirusType t) { return t == VirusType::Triangle ? arrowAttackTexture() : middleAttackTexture(); }
+    sf::Texture& deathTextureFor(VirusType t) { return t == VirusType::Triangle ? arrowDeathTexture() : middleDeathTexture(); }
 }
 
 Virus::Virus(VirusType type, sf::Vector2f position)
     : type(type), stats(getStatsForType(type)), currentHealth(stats.health)
 {
-    if (type == VirusType::Circle) {
+    if (type == VirusType::Circle || type == VirusType::Triangle) {
         useSprite = true;
-        idleAnim = std::make_unique<Animation>(middleIdleTexture(), 1, 1, 1.f);
-        attackAnim = std::make_unique<Animation>(middleAttackTexture(), 2, 2, 0.15f);
-        deathAnim = std::make_unique<Animation>(middleDeathTexture(), 3, 3, 0.12f, false);
 
-        sprite = std::make_unique<sf::Sprite>(middleIdleTexture());
+        idleAnim = std::make_unique<Animation>(idleTextureFor(type), 1, 1, 1.f);
+        if (type == VirusType::Circle) {
+            attackAnim = std::make_unique<Animation>(attackTextureFor(type), 2, 2, 0.15f);
+            deathAnim = std::make_unique<Animation>(deathTextureFor(type), 3, 3, 0.12f, false);
+        }
+        else {
+            attackAnim = std::make_unique<Animation>(attackTextureFor(type), 1, 2, 0.15f);
+            deathAnim = std::make_unique<Animation>(deathTextureFor(type), 2, 2, 0.12f, false);
+        }
+
+        sprite = std::make_unique<sf::Sprite>(idleTextureFor(type));
         idleAnim->applyTo(*sprite);
         sf::IntRect rect = sprite->getTextureRect();
         sprite->setOrigin({ rect.size.x / 2.f, rect.size.y / 2.f });
         sprite->setPosition(position);
     }
     else {
-        if (type == VirusType::Triangle) {
-            auto triangle = std::make_unique<sf::ConvexShape>();
-            triangle->setPointCount(3);
-            triangle->setPoint(0, { 0.f, -30.f });
-            triangle->setPoint(1, { -30.f, 30.f });
-            triangle->setPoint(2, { 30.f, 30.f });
-            triangle->setFillColor(sf::Color(230, 210, 30));
-            shape = std::move(triangle);
-        }
-        else {
-            auto square = std::make_unique<sf::RectangleShape>(sf::Vector2f(60.f, 60.f));
-            square->setFillColor(sf::Color(40, 90, 220));
-            shape = std::move(square);
-        }
+        auto square = std::make_unique<sf::RectangleShape>(sf::Vector2f(60.f, 60.f));
+        square->setFillColor(sf::Color(40, 90, 220));
+        shape = std::move(square);
+
         sf::FloatRect bounds = shape->getLocalBounds();
         shape->setOrigin({ bounds.position.x + bounds.size.x / 2.f, bounds.position.y + bounds.size.y / 2.f });
         shape->setOutlineThickness(3.f);
@@ -122,8 +139,9 @@ bool Virus::isRemovable() const {
 void Virus::update(float deltaTime) {
     if (currentHealth <= 0.f) {
         if (useSprite) {
-            if (&sprite->getTexture() != &middleDeathTexture()) {
-                sprite->setTexture(middleDeathTexture(), false);
+            sf::Texture& deathTex = deathTextureFor(type);
+            if (&sprite->getTexture() != &deathTex) {
+                sprite->setTexture(deathTex, false);
                 deathAnim->reset();
                 deathAnim->applyTo(*sprite);
                 sf::IntRect rect = sprite->getTextureRect();
@@ -150,7 +168,7 @@ void Virus::update(float deltaTime) {
 
     if (useSprite) {
         Animation* anim = isFighting ? attackAnim.get() : idleAnim.get();
-        sf::Texture& tex = isFighting ? middleAttackTexture() : middleIdleTexture();
+        sf::Texture& tex = isFighting ? attackTextureFor(type) : idleTextureFor(type);
 
         if (&sprite->getTexture() != &tex) {
             sprite->setTexture(tex, false);

@@ -21,8 +21,10 @@ private:
     float currentHealth;
 
     sf::Sprite sprite;
-    std::unique_ptr<Animation> idleAnim, deathAnim;
+    std::unique_ptr<Animation> idleAnim, deathAnim, woundAnim;
+    bool showWound = false;
     float desiredSize = 0.f;
 
     void applyScale();
+    void switchTexture(sf::Texture& tex, Animation* anim);
 };
