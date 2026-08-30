@@ -54,6 +54,7 @@ PlayingScene::PlayingScene(int level)
         tileMap.revealCell(spawns[p].pos);
     }
 
+    // расстановка Файрволов (2-5, все уровни)
     int totalFirewalls = 2 + (rand() % 4);
     std::vector<size_t> eligiblePaths;
     for (size_t p = 0; p < allPaths.size(); p++) if (allPaths[p].size() >= 3) eligiblePaths.push_back(p);
@@ -85,7 +86,7 @@ PlayingScene::PlayingScene(int level)
         float rotation = horizontal ? 90.f : 0.f;
 
         WallInfo wall;
-        wall.tower = std::make_unique<Tower>(pos, rotation);
+        wall.tower = std::make_unique<Tower>(TowerKind::Firewall, pos, rotation);
         wall.tower->setDesiredSize(cellSize * 0.9f);
         wall.pathIndex = chosen;
         wall.blockIndex = idx;
@@ -93,6 +94,49 @@ PlayingScene::PlayingScene(int level)
 
         usedIndicesPerPath[chosen].push_back(idx);
         placed++;
+    }
+
+    //расстановка Спайдеров (с уровня 2 максимум 2 на карту, обычно 1 на путь)
+    if (levelNumber >= 2) {
+        int totalSpiders = rand() % 3; //0, 1 или 2
+        std::vector<size_t> pathsWithoutSpider;
+        for (size_t p = 0; p < allPaths.size(); p++) if (allPaths[p].size() >= 3) pathsWithoutSpider.push_back(p);
+
+        int spidersPlaced = 0, spiderAttempts = 0;
+        while (spidersPlaced < totalSpiders && !pathsWithoutSpider.empty() && spiderAttempts < totalSpiders * 30) {
+            spiderAttempts++;
+            std::uniform_int_distribution<size_t> pathPick(0, pathsWithoutSpider.size() - 1);
+            size_t pickIdx = pathPick(rng);
+            size_t chosen = pathsWithoutSpider[pickIdx];
+            auto& path = allPaths[chosen];
+
+            std::uniform_int_distribution<size_t> idxPick(1, path.size() - 2);
+            size_t idx = idxPick(rng);
+
+            bool tooClose = false;
+            for (size_t used : usedIndicesPerPath[chosen]) {
+                if (std::abs((long long)used - (long long)idx) < 2) { tooClose = true; break; }
+            }
+            if (tooClose) continue;
+
+            GridPos before = path[idx - 1];
+            GridPos after = (idx + 1 < path.size()) ? path[idx + 1] : path[idx];
+            bool horizontal = (before.y == after.y);
+
+            sf::Vector2f pos = tileMap.worldPos(path[idx]);
+            float rotation = horizontal ? 90.f : 0.f;
+
+            WallInfo wall;
+            wall.tower = std::make_unique<Tower>(TowerKind::Spider, pos, rotation);
+            wall.tower->setDesiredSize(cellSize * 0.9f);
+            wall.pathIndex = chosen;
+            wall.blockIndex = idx;
+            firewalls.push_back(std::move(wall));
+
+            usedIndicesPerPath[chosen].push_back(idx);
+            pathsWithoutSpider.erase(pathsWithoutSpider.begin() + pickIdx); //обычно 1 на путь
+            spidersPlaced++;
+        }
     }
 
     setupBanner();

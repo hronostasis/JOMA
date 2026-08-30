@@ -4,6 +4,8 @@
 #include "Animation.h"
 #include "Damageable.h"
 
+enum class TowerKind { Firewall, Spider };
+
 struct TowerStats {
     float health;
     float attackPower;
@@ -11,7 +13,7 @@ struct TowerStats {
 
 class Tower : public Damageable {
 public:
-    Tower(sf::Vector2f position, float rotationDegrees);
+    Tower(TowerKind kind, sf::Vector2f position, float rotationDegrees);
 
     void update(float deltaTime);
     void draw(sf::RenderWindow& window);
@@ -24,6 +26,7 @@ public:
     float getAttackPower() const override { return stats.attackPower; }
 
 private:
+    TowerKind kind;
     TowerStats stats;
     float currentHealth;
 
