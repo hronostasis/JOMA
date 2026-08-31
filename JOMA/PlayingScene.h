@@ -8,6 +8,7 @@
 #include "UI.h"
 #include <vector>
 #include <memory>
+#include <array>
 
 struct SpawnPoint {
     std::vector<sf::Vector2f> waypoints;
@@ -48,6 +49,9 @@ private:
     std::vector<Virus> viruses;
     int virusBudget = 10;
     int selectedSpawnIndex = -1;
+    std::vector<VirusType> allowedTypes;
+    std::array<int, 3> virusCounts = { 0, 0, 0 };
+    float elapsedTime = 0.f;
 
     std::vector<WallInfo> firewalls;
 
@@ -59,4 +63,5 @@ private:
     void setupBanner();
     void checkWinLoseConditions();
     void trySpawnVirus(size_t i);
+    void drawHUD(sf::RenderWindow& window);
 };

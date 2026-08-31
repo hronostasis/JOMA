@@ -5,6 +5,8 @@
 #include <random>
 #include <algorithm>
 #include <cmath>
+#include <sstream>
+#include <iomanip>
 
 namespace {
     sf::Texture& spawnMiddleTexture() {
@@ -27,6 +29,17 @@ namespace {
         if (t == VirusType::Triangle) return spawnArrowTexture();
         return spawnTankTexture();
     }
+
+    sf::Texture& hudMiddleTexture() {
+        static sf::Texture tex;
+        static bool loaded = ((void)tex.loadFromFile("assets/tiles/middle_idle.png"), true);
+        return tex;
+    }
+    sf::Texture& hudArrowTexture() {
+        static sf::Texture tex;
+        static bool loaded = ((void)tex.loadFromFile("assets/tiles/arrow_idle.png"), true);
+        return tex;
+    }
 }
 
 PlayingScene::PlayingScene(int level)
@@ -47,7 +60,6 @@ PlayingScene::PlayingScene(int level)
     server = std::make_unique<Server>(serverCenter);
     server->setDesiredSize(cellSize * 3.f);
 
-    std::vector<VirusType> allowedTypes;
     if (levelNumber == 1) allowedTypes = { VirusType::Circle };
     else allowedTypes = { VirusType::Circle, VirusType::Triangle, VirusType::Square };
 
@@ -215,6 +227,7 @@ void PlayingScene::trySpawnVirus(size_t i) {
 
     viruses.push_back(std::move(virus));
     virusBudget--;
+    virusCounts[(int)sp.type]++;
 }
 
 void PlayingScene::handleEvent(const sf::Event& event, Game& game) {
@@ -280,6 +293,8 @@ void PlayingScene::update(float deltaTime, Game& game) {
         return;
     }
 
+    elapsedTime += deltaTime;
+
     for (auto& w : firewalls) {
         if (w.tower && w.tower->isAlive()) w.tower->setAttacking(false);
     }
@@ -303,6 +318,63 @@ void PlayingScene::update(float deltaTime, Game& game) {
     );
 
     checkWinLoseConditions();
+}
+
+void PlayingScene::drawHUD(sf::RenderWindow& window) {
+    float panelHeight = 70.f + allowedTypes.size() * 32.f;
+    sf::RectangleShape panel({ 220.f, panelHeight });
+    panel.setPosition({ 20.f, 20.f });
+    panel.setFillColor(sf::Color(20, 18, 30, 210));
+    panel.setOutlineThickness(2.f);
+    panel.setOutlineColor(sf::Color(120, 110, 220));
+    window.draw(panel);
+
+    int minutes = (int)elapsedTime / 60;
+    int seconds = (int)elapsedTime % 60;
+    std::ostringstream timeStream;
+    timeStream << std::setw(2) << std::setfill('0') << minutes << ":"
+        << std::setw(2) << std::setfill('0') << seconds;
+
+    sf::Text timeText(bannerFont, timeStream.str(), 22);
+    timeText.setFillColor(sf::Color::White);
+    timeText.setPosition({ 35.f, 30.f });
+    window.draw(timeText);
+
+    sf::Text budgetText(bannerFont, "Viruses: " + std::to_string(virusBudget), 18);
+    budgetText.setFillColor(sf::Color(200, 200, 200));
+    budgetText.setPosition({ 35.f, 62.f });
+    window.draw(budgetText);
+
+    float iconY = 96.f;
+    for (auto type : allowedTypes) {
+        if (type == VirusType::Circle) {
+            sf::Sprite icon(hudMiddleTexture());
+            sf::Vector2f texSize = { (float)hudMiddleTexture().getSize().x, (float)hudMiddleTexture().getSize().y };
+            icon.setScale({ 24.f / texSize.x, 24.f / texSize.y });
+            icon.setPosition({ 35.f, iconY });
+            window.draw(icon);
+        }
+        else if (type == VirusType::Triangle) {
+            sf::Sprite icon(hudArrowTexture());
+            sf::Vector2f texSize = { (float)hudArrowTexture().getSize().x, (float)hudArrowTexture().getSize().y };
+            icon.setScale({ 24.f / texSize.x, 24.f / texSize.y });
+            icon.setPosition({ 35.f, iconY });
+            window.draw(icon);
+        }
+        else {
+            sf::RectangleShape icon({ 24.f, 24.f });
+            icon.setFillColor(sf::Color(40, 90, 220));
+            icon.setPosition({ 35.f, iconY });
+            window.draw(icon);
+        }
+
+        sf::Text countText(bannerFont, "x " + std::to_string(virusCounts[(int)type]), 18);
+        countText.setFillColor(sf::Color::White);
+        countText.setPosition({ 70.f, iconY + 2.f });
+        window.draw(countText);
+
+        iconY += 32.f;
+    }
 }
 
 void PlayingScene::render(sf::RenderWindow& window) {
@@ -329,6 +401,8 @@ void PlayingScene::render(sf::RenderWindow& window) {
 
     for (auto& virus : viruses) virus.draw(window);
     tileMap.drawFog(window);
+
+    drawHUD(window);
 
     if (result != LevelResult::None) {
         sf::RectangleShape overlay({ 1280.f, 900.f });
