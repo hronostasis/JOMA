@@ -52,7 +52,7 @@ PlayingScene::PlayingScene(int level)
     GridPos serverBlockOrigin = { cols / 2 - 1, rows / 2 - 1 };
     int pathCount = 2 + (rand() % 2);
     std::vector<SpawnSlot> spawns = pickSpawnSlots(cols, rows, pathCount);
-    std::vector<std::vector<GridPos>> allPaths = generateAllPaths(spawns, serverBlockOrigin, cols, rows);
+    std::vector<std::vector<GridPos>> allPaths = generateAllPaths(spawns, serverBlockOrigin, cols, rows, levelNumber >= 2);
 
     tileMap.build(allPaths, serverBlockOrigin);
 

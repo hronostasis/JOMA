@@ -30,7 +30,7 @@ static int manhattan(GridPos a, GridPos b) {
     return std::abs(a.x - b.x) + std::abs(a.y - b.y);
 }
 
-std::vector<std::vector<GridPos>> generateAllPaths(const std::vector<SpawnSlot>& spawns, GridPos serverBlockOrigin, int cols, int rows) {
+std::vector<std::vector<GridPos>> generateAllPaths(const std::vector<SpawnSlot>& spawns, GridPos serverBlockOrigin, int cols, int rows, bool addTurns) {
     std::vector<std::vector<GridPos>> allPaths;
     std::vector<std::vector<bool>> occupied(cols, std::vector<bool>(rows, false));
 
@@ -51,6 +51,9 @@ std::vector<std::vector<GridPos>> generateAllPaths(const std::vector<SpawnSlot>&
         occupied[current.x][current.y] = true;
 
         int safety = cols * rows * 4;
+        int detoursUsed = 0;
+        const int maxDetours = 4;
+
         while (!(current == target) && safety-- > 0) {
             int dist = manhattan(current, target);
 
@@ -66,7 +69,15 @@ std::vector<std::vector<GridPos>> generateAllPaths(const std::vector<SpawnSlot>&
                 return result;
                 };
 
-            std::vector<GridPos> candidates = tryTier([](int nd, int d, bool free) { return nd < d && free; });
+            std::vector<GridPos> candidates;
+
+            if (addTurns && detoursUsed < maxDetours && dist > 2 && (rng() % 100) < 35) {
+                candidates = tryTier([](int nd, int d, bool free) { return free && nd <= d + 1 && nd != d - 1; });
+                if (!candidates.empty()) detoursUsed++;
+            }
+
+            if (candidates.empty())
+                candidates = tryTier([](int nd, int d, bool free) { return nd < d && free; });
             if (candidates.empty())
                 candidates = tryTier([](int nd, int d, bool free) { return nd <= d && free; });
             if (candidates.empty())

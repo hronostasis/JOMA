@@ -14,4 +14,4 @@ struct SpawnSlot {
 };
 
 std::vector<SpawnSlot> pickSpawnSlots(int cols, int rows, int count);
-std::vector<std::vector<GridPos>> generateAllPaths(const std::vector<SpawnSlot>& spawns, GridPos serverBlockOrigin, int cols, int rows);
+std::vector<std::vector<GridPos>> generateAllPaths(const std::vector<SpawnSlot>& spawns, GridPos serverBlockOrigin, int cols, int rows, bool addTurns = false);
