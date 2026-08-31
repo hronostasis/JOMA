@@ -376,6 +376,29 @@ void PlayingScene::drawHUD(sf::RenderWindow& window) {
         iconY += 32.f;
     }
 }
+void PlayingScene::drawServerHUD(sf::RenderWindow& window) {
+    float panelWidth = 200.f;
+    sf::RectangleShape panel({ panelWidth, 60.f });
+    panel.setPosition({ 1280.f - panelWidth - 20.f, 20.f });
+    panel.setFillColor(sf::Color(20, 18, 30, 210));
+    panel.setOutlineThickness(2.f);
+    panel.setOutlineColor(sf::Color(120, 110, 220));
+    window.draw(panel);
+
+    sf::Sprite icon(*server->getIconTexturePtr());
+    sf::Vector2f texSize = { (float)server->getIconTexturePtr()->getSize().x, (float)server->getIconTexturePtr()->getSize().y };
+    icon.setScale({ 28.f / texSize.x, 28.f / texSize.y });
+    icon.setPosition({ 1280.f - panelWidth - 20.f + 16.f, 36.f });
+    window.draw(icon);
+
+    std::ostringstream hpStream;
+    hpStream << (int)server->getHealth() << " / " << (int)server->getMaxHealth();
+
+    sf::Text hpText(bannerFont, hpStream.str(), 20);
+    hpText.setFillColor(sf::Color::White);
+    hpText.setPosition({ 1280.f - panelWidth - 20.f + 56.f, 32.f });
+    window.draw(hpText);
+}
 
 void PlayingScene::render(sf::RenderWindow& window) {
     tileMap.draw(window);
@@ -401,8 +424,8 @@ void PlayingScene::render(sf::RenderWindow& window) {
 
     for (auto& virus : viruses) virus.draw(window);
     tileMap.drawFog(window);
-
     drawHUD(window);
+    drawServerHUD(window);
 
     if (result != LevelResult::None) {
         sf::RectangleShape overlay({ 1280.f, 900.f });

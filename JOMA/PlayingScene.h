@@ -64,4 +64,5 @@ private:
     void checkWinLoseConditions();
     void trySpawnVirus(size_t i);
     void drawHUD(sf::RenderWindow& window);
+    void drawServerHUD(sf::RenderWindow& window);
 };

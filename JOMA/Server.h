@@ -15,6 +15,9 @@ public:
     void takeDamage(float amount) override;
     bool isAlive() const override { return currentHealth > 0.f; }
     bool isDeathFinished() const { return deathAnim && deathAnim->isFinished(); }
+    float getHealth() const { return currentHealth; }
+    float getMaxHealth() const { return maxHealth; }
+    const sf::Texture* getIconTexturePtr() const;
 
 private:
     float maxHealth = 500.f;

@@ -94,3 +94,6 @@ void Server::takeDamage(float amount) {
         woundAnim->reset();
     }
 }
+const sf::Texture* Server::getIconTexturePtr() const {
+    return &coreIdleTexture();
+}
