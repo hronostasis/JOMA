@@ -12,10 +12,11 @@
 struct SpawnPoint {
     std::vector<sf::Vector2f> waypoints;
     VirusType type;
+    Side side;
     sf::Sprite sprite;
 
-    SpawnPoint(sf::Texture& tex, std::vector<sf::Vector2f> wp, VirusType t)
-        : waypoints(std::move(wp)), type(t), sprite(tex) {
+    SpawnPoint(sf::Texture& tex, std::vector<sf::Vector2f> wp, VirusType t, Side s)
+        : waypoints(std::move(wp)), type(t), side(s), sprite(tex) {
     }
 };
 
@@ -43,10 +44,10 @@ private:
     int levelNumber;
     TileMap tileMap;
     std::unique_ptr<Server> server;
-    sf::Texture spawnTexture;
     std::vector<SpawnPoint> spawnPoints;
     std::vector<Virus> viruses;
     int virusBudget = 10;
+    int selectedSpawnIndex = -1;
 
     std::vector<WallInfo> firewalls;
 
@@ -57,4 +58,5 @@ private:
 
     void setupBanner();
     void checkWinLoseConditions();
+    void trySpawnVirus(size_t i);
 };

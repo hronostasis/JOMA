@@ -1,16 +1,38 @@
 #include "PlayingScene.h"
 #include "Game.h"
+#include "LevelSelectScene.h"
 #include <cstdlib>
 #include <random>
 #include <algorithm>
 #include <cmath>
-#include "LevelSelectScene.h"
+
+namespace {
+    sf::Texture& spawnMiddleTexture() {
+        static sf::Texture tex;
+        static bool loaded = ((void)tex.loadFromFile("assets/tiles/spawn_middle.png"), true);
+        return tex;
+    }
+    sf::Texture& spawnArrowTexture() {
+        static sf::Texture tex;
+        static bool loaded = ((void)tex.loadFromFile("assets/tiles/spawn_arrow.png"), true);
+        return tex;
+    }
+    sf::Texture& spawnTankTexture() {
+        static sf::Texture tex;
+        static bool loaded = ((void)tex.loadFromFile("assets/tiles/spawn_tank.png"), true);
+        return tex;
+    }
+    sf::Texture& spawnTextureFor(VirusType t) {
+        if (t == VirusType::Circle) return spawnMiddleTexture();
+        if (t == VirusType::Triangle) return spawnArrowTexture();
+        return spawnTankTexture();
+    }
+}
 
 PlayingScene::PlayingScene(int level)
     : levelNumber(level), tileMap(cellSize, sf::Vector2f(80.f, 45.f), cols, rows),
     btnAText(bannerFont), btnBText(bannerFont)
 {
-    (void)spawnTexture.loadFromFile("assets/tiles/spawn_virus.png");
     (void)bannerFont.openFromFile("C:/Windows/Fonts/consola.ttf");
     viruses.reserve(virusBudget);
 
@@ -43,10 +65,10 @@ PlayingScene::PlayingScene(int level)
         waypoints.push_back(waypoints.back() + dirToBlock * (cellSize / 2.f));
 
         VirusType type = allowedTypes[p % allowedTypes.size()];
-        spawnPoints.emplace_back(spawnTexture, waypoints, type);
+        spawnPoints.emplace_back(spawnTextureFor(type), waypoints, type, spawns[p].side);
 
         SpawnPoint& sp = spawnPoints.back();
-        sf::Vector2f texSize = { (float)spawnTexture.getSize().x, (float)spawnTexture.getSize().y };
+        sf::Vector2f texSize = { (float)spawnTextureFor(type).getSize().x, (float)spawnTextureFor(type).getSize().y };
         sp.sprite.setOrigin({ texSize.x / 2.f, texSize.y / 2.f });
         sp.sprite.setScale({ cellSize / texSize.x, cellSize / texSize.y });
         sp.sprite.setPosition(waypoints[0]);
@@ -54,7 +76,6 @@ PlayingScene::PlayingScene(int level)
         tileMap.revealCell(spawns[p].pos);
     }
 
-    // расстановка Файрволов (2-5, все уровни)
     int totalFirewalls = 2 + (rand() % 4);
     std::vector<size_t> eligiblePaths;
     for (size_t p = 0; p < allPaths.size(); p++) if (allPaths[p].size() >= 3) eligiblePaths.push_back(p);
@@ -96,9 +117,8 @@ PlayingScene::PlayingScene(int level)
         placed++;
     }
 
-    //расстановка Спайдеров (с уровня 2 максимум 2 на карту, обычно 1 на путь)
     if (levelNumber >= 2) {
-        int totalSpiders = rand() % 3; //0, 1 или 2
+        int totalSpiders = rand() % 3;
         std::vector<size_t> pathsWithoutSpider;
         for (size_t p = 0; p < allPaths.size(); p++) if (allPaths[p].size() >= 3) pathsWithoutSpider.push_back(p);
 
@@ -134,7 +154,7 @@ PlayingScene::PlayingScene(int level)
             firewalls.push_back(std::move(wall));
 
             usedIndicesPerPath[chosen].push_back(idx);
-            pathsWithoutSpider.erase(pathsWithoutSpider.begin() + pickIdx); //обычно 1 на путь
+            pathsWithoutSpider.erase(pathsWithoutSpider.begin() + pickIdx);
             spidersPlaced++;
         }
     }
@@ -180,6 +200,27 @@ void PlayingScene::checkWinLoseConditions() {
     }
 }
 
+void PlayingScene::trySpawnVirus(size_t i) {
+    if (virusBudget <= 0 || i >= spawnPoints.size()) return;
+    SpawnPoint& sp = spawnPoints[i];
+
+    Virus virus(sp.type, sp.waypoints[0]);
+    virus.setDesiredSize(cellSize * 0.9f);
+    virus.setPath(sp.waypoints);
+
+    std::vector<std::pair<Damageable*, size_t>> blockersForPath;
+    for (auto& w : firewalls) {
+        if (w.pathIndex == i) blockersForPath.push_back({ w.tower.get(), w.blockIndex });
+    }
+    std::sort(blockersForPath.begin(), blockersForPath.end(),
+        [](auto& a, auto& b) { return a.second < b.second; });
+    blockersForPath.push_back({ server.get(), sp.waypoints.size() - 1 });
+    virus.setBlockers(std::move(blockersForPath));
+
+    viruses.push_back(std::move(virus));
+    virusBudget--;
+}
+
 void PlayingScene::handleEvent(const sf::Event& event, Game& game) {
     if (const auto* mp = event.getIf<sf::Event::MouseButtonPressed>()) {
         if (mp->button == sf::Mouse::Button::Left) {
@@ -201,40 +242,34 @@ void PlayingScene::handleEvent(const sf::Event& event, Game& game) {
             }
 
             for (size_t i = 0; i < spawnPoints.size(); i++) {
-                if (virusBudget <= 0) continue;
-                SpawnPoint& sp = spawnPoints[i];
-                if (sp.sprite.getGlobalBounds().contains(pos)) {
-                    Virus virus(sp.type, sp.waypoints[0]);
-                    virus.setDesiredSize(cellSize * 0.9f);
-                    virus.setPath(sp.waypoints);
-
-                    std::vector<std::pair<Damageable*, size_t>> blockersForPath;
-                    for (auto& w : firewalls) {
-                        if (w.pathIndex == i) blockersForPath.push_back({ w.tower.get(), w.blockIndex });
-                    }
-                    std::sort(blockersForPath.begin(), blockersForPath.end(),
-                        [](auto& a, auto& b) { return a.second < b.second; });
-
-                    blockersForPath.push_back({ server.get(), sp.waypoints.size() - 1 });
-
-                    virus.setBlockers(std::move(blockersForPath));
-
-                    viruses.push_back(std::move(virus));
-                    virusBudget--;
+                if (spawnPoints[i].sprite.getGlobalBounds().contains(pos)) {
+                    trySpawnVirus(i);
                 }
             }
 
             for (auto& virus : viruses) {
                 if (virus.getGlobalBounds().contains(pos)) {
-                    // выбрать этот вирус
+                    //выбрать этот вирус
                 }
             }
         }
     }
     if (const auto* kp = event.getIf<sf::Event::KeyPressed>()) {
-        if (kp->code == sf::Keyboard::Key::Num1) { /* выбрать вирус 1 */ }
-        if (kp->code == sf::Keyboard::Key::Num2) { /* выбрать вирус 2 */ }
-        if (kp->code == sf::Keyboard::Key::Num3) { /* выбрать вирус 3 */ }
+        if (result != LevelResult::None) return;
+
+        auto findSpawnBySide = [&](Side s) -> int {
+            for (size_t i = 0; i < spawnPoints.size(); i++) if (spawnPoints[i].side == s) return (int)i;
+            return -1;
+            };
+
+        if (kp->code == sf::Keyboard::Key::Num1) selectedSpawnIndex = findSpawnBySide(Side::West);
+        if (kp->code == sf::Keyboard::Key::Num2) selectedSpawnIndex = findSpawnBySide(Side::North);
+        if (kp->code == sf::Keyboard::Key::Num3) selectedSpawnIndex = findSpawnBySide(Side::East);
+        if (kp->code == sf::Keyboard::Key::Num4) selectedSpawnIndex = findSpawnBySide(Side::South);
+
+        if (kp->code == sf::Keyboard::Key::Enter && selectedSpawnIndex != -1) {
+            trySpawnVirus((size_t)selectedSpawnIndex);
+        }
     }
 }
 
@@ -280,10 +315,22 @@ void PlayingScene::render(sf::RenderWindow& window) {
         if (w.tower && (w.tower->isAlive() || !w.tower->isDeathFinished())) w.tower->draw(window);
     }
     server->draw(window);
-    for (auto& sp : spawnPoints) {
-        sp.sprite.setColor(virusBudget > 0 ? sf::Color::White : sf::Color(255, 255, 255, 80));
-        window.draw(sp.sprite);
+
+    for (size_t i = 0; i < spawnPoints.size(); i++) {
+        spawnPoints[i].sprite.setColor(virusBudget > 0 ? sf::Color::White : sf::Color(255, 255, 255, 80));
+        window.draw(spawnPoints[i].sprite);
     }
+
+    if (selectedSpawnIndex != -1 && selectedSpawnIndex < (int)spawnPoints.size()) {
+        sf::CircleShape ring(cellSize * 0.55f);
+        ring.setOrigin({ ring.getRadius(), ring.getRadius() });
+        ring.setPosition(spawnPoints[selectedSpawnIndex].sprite.getPosition());
+        ring.setFillColor(sf::Color::Transparent);
+        ring.setOutlineThickness(4.f);
+        ring.setOutlineColor(sf::Color::White);
+        window.draw(ring);
+    }
+
     for (auto& virus : viruses) virus.draw(window);
     tileMap.drawFog(window);
 
@@ -293,7 +340,7 @@ void PlayingScene::render(sf::RenderWindow& window) {
         window.draw(overlay);
 
         sf::Color neon = (result == LevelResult::Victory) ? sf::Color(60, 200, 255) : sf::Color(230, 40, 60);
-        std::string title = (result == LevelResult::Victory) ? "result: VICTORY" : "result: DEFEAT";
+        std::string title = (result == LevelResult::Victory) ? "result: Victory" : "result: Defeat";
         drawNeonText(window, bannerFont, title, 90, { 1280.f / 2.f, 380.f }, neon);
 
         window.draw(btnA);
