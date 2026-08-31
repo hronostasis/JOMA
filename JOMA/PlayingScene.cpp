@@ -101,13 +101,11 @@ PlayingScene::PlayingScene(int level)
 
         GridPos before = path[idx - 1];
         GridPos after = (idx + 1 < path.size()) ? path[idx + 1] : path[idx];
-        bool horizontal = (before.y == after.y);
-
         sf::Vector2f pos = tileMap.worldPos(path[idx]);
-        float rotation = horizontal ? 90.f : 0.f;
+        sf::Vector2f travelDir = { (float)(after.x - before.x), (float)(after.y - before.y) };
 
         WallInfo wall;
-        wall.tower = std::make_unique<Tower>(TowerKind::Firewall, pos, rotation);
+        wall.tower = std::make_unique<Tower>(TowerKind::Firewall, pos, travelDir);
         wall.tower->setDesiredSize(cellSize * 0.9f);
         wall.pathIndex = chosen;
         wall.blockIndex = idx;
@@ -141,13 +139,11 @@ PlayingScene::PlayingScene(int level)
 
             GridPos before = path[idx - 1];
             GridPos after = (idx + 1 < path.size()) ? path[idx + 1] : path[idx];
-            bool horizontal = (before.y == after.y);
-
             sf::Vector2f pos = tileMap.worldPos(path[idx]);
-            float rotation = horizontal ? 90.f : 0.f;
+            sf::Vector2f travelDir = { (float)(after.x - before.x), (float)(after.y - before.y) };
 
             WallInfo wall;
-            wall.tower = std::make_unique<Tower>(TowerKind::Spider, pos, rotation);
+            wall.tower = std::make_unique<Tower>(TowerKind::Spider, pos, travelDir);
             wall.tower->setDesiredSize(cellSize * 0.9f);
             wall.pathIndex = chosen;
             wall.blockIndex = idx;

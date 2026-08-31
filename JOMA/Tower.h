@@ -13,7 +13,7 @@ struct TowerStats {
 
 class Tower : public Damageable {
 public:
-    Tower(TowerKind kind, sf::Vector2f position, float rotationDegrees);
+    Tower(TowerKind kind, sf::Vector2f position, sf::Vector2f travelDirection);
 
     void update(float deltaTime);
     void draw(sf::RenderWindow& window);

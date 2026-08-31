@@ -1,4 +1,5 @@
 #include "Tower.h"
+#include <cmath>
 
 namespace {
     sf::Texture& firewallIdleTexture() {
@@ -38,12 +39,12 @@ namespace {
     sf::Texture& deathTextureFor(TowerKind k) { return k == TowerKind::Spider ? spiderDeathTexture() : firewallDeathTexture(); }
 
     TowerStats statsFor(TowerKind k) {
-        if (k == TowerKind::Spider) return { 100.f, 10.f }; // прикидка, баланс подберём отдельно
+        if (k == TowerKind::Spider) return { 100.f, 10.f }; //прикидка, баланс подберём отдельно
         return { 120.f, 12.f };
     }
 }
 
-Tower::Tower(TowerKind kind, sf::Vector2f position, float rotationDegrees)
+Tower::Tower(TowerKind kind, sf::Vector2f position, sf::Vector2f travelDirection)
     : kind(kind), stats(statsFor(kind)), currentHealth(stats.health), sprite(idleTextureFor(kind))
 {
     idleAnim = std::make_unique<Animation>(idleTextureFor(kind), 1, 1, 1.f);
@@ -61,7 +62,16 @@ Tower::Tower(TowerKind kind, sf::Vector2f position, float rotationDegrees)
     sf::IntRect rect = sprite.getTextureRect();
     sprite.setOrigin({ rect.size.x / 2.f, rect.size.y / 2.f });
     sprite.setPosition(position);
-    sprite.setRotation(sf::degrees(rotationDegrees));
+
+    float rotation = 0.f;
+    if (kind == TowerKind::Firewall) {
+        rotation = (travelDirection.x != 0.f) ? 90.f : 0.f;
+    }
+    else {
+        sf::Vector2f facing = -travelDirection;
+        rotation = std::atan2(facing.y, facing.x) * 180.f / 3.14159265f + 90.f;
+    }
+    sprite.setRotation(sf::degrees(rotation));
 }
 
 void Tower::update(float deltaTime) {
