@@ -40,6 +40,11 @@ namespace {
         static bool loaded = ((void)tex.loadFromFile("assets/tiles/arrow_idle.png"), true);
         return tex;
     }
+    sf::Texture& hudTankTexture() {
+        static sf::Texture tex;
+        static bool loaded = ((void)tex.loadFromFile("assets/tiles/tank_idle.png"), true);
+        return tex;
+    }
 }
 
 PlayingScene::PlayingScene(int level)
@@ -50,7 +55,7 @@ PlayingScene::PlayingScene(int level)
     viruses.reserve(virusBudget);
 
     GridPos serverBlockOrigin = { cols / 2 - 1, rows / 2 - 1 };
-    int pathCount = 2 + (rand() % 2);
+    int pathCount = (levelNumber >= 3) ? (3 + rand() % 2) : (2 + rand() % 2);
     std::vector<SpawnSlot> spawns = pickSpawnSlots(cols, rows, pathCount);
     std::vector<std::vector<GridPos>> allPaths = generateAllPaths(spawns, serverBlockOrigin, cols, rows, levelNumber >= 2);
 
@@ -61,6 +66,7 @@ PlayingScene::PlayingScene(int level)
     server->setDesiredSize(cellSize * 3.f);
 
     if (levelNumber == 1) allowedTypes = { VirusType::Circle };
+    else if (levelNumber == 2) allowedTypes = { VirusType::Circle, VirusType::Triangle };
     else allowedTypes = { VirusType::Circle, VirusType::Triangle, VirusType::Square };
 
     for (size_t p = 0; p < allPaths.size(); p++) {
@@ -76,7 +82,15 @@ PlayingScene::PlayingScene(int level)
         }
         waypoints.push_back(waypoints.back() + dirToBlock * (cellSize / 2.f));
 
-        VirusType type = allowedTypes[p % allowedTypes.size()];
+        VirusType type;
+        if (p < allowedTypes.size()) {
+            type = allowedTypes[p];
+        }
+        else {
+            static std::mt19937 typeRng(std::random_device{}());
+            std::uniform_int_distribution<size_t> typePick(0, allowedTypes.size() - 1);
+            type = allowedTypes[typePick(typeRng)];
+        }
         spawnPoints.emplace_back(spawnTextureFor(type), waypoints, type, spawns[p].side);
 
         SpawnPoint& sp = spawnPoints.back();
@@ -362,8 +376,9 @@ void PlayingScene::drawHUD(sf::RenderWindow& window) {
             window.draw(icon);
         }
         else {
-            sf::RectangleShape icon({ 24.f, 24.f });
-            icon.setFillColor(sf::Color(40, 90, 220));
+            sf::Sprite icon(hudTankTexture());
+            sf::Vector2f texSize = { (float)hudTankTexture().getSize().x, (float)hudTankTexture().getSize().y };
+            icon.setScale({ 24.f / texSize.x, 24.f / texSize.y });
             icon.setPosition({ 35.f, iconY });
             window.draw(icon);
         }

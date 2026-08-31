@@ -26,7 +26,7 @@ public:
     void setPath(std::vector<sf::Vector2f> newPath);
     void update(float deltaTime);
     bool hasReachedEnd() const { return reachedEnd; }
-    sf::Vector2f getWorldPosition() const { return getPosition(); }
+    sf::Vector2f getWorldPosition() const { return sprite->getPosition(); }
 
     float getHealth() const { return currentHealth; }
     float getMaxHealth() const { return stats.health; }
@@ -45,9 +45,6 @@ private:
     VirusStats stats;
     float currentHealth;
 
-    std::unique_ptr<sf::Shape> shape;
-
-    bool useSprite = false;
     std::unique_ptr<sf::Sprite> sprite;
     std::unique_ptr<Animation> idleAnim, attackAnim, deathAnim;
     float desiredSize = 0.f;
@@ -60,7 +57,5 @@ private:
     size_t blockerCursor = 0;
     float attackTimer = 0.f;
 
-    sf::Vector2f getPosition() const;
-    void setPosition(sf::Vector2f pos);
     void applySpriteScale();
 };
