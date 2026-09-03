@@ -7,6 +7,7 @@
 #include <cmath>
 #include <sstream>
 #include <iomanip>
+#include "SaveProgress.h"
 
 namespace {
     sf::Texture& spawnMiddleTexture() {
@@ -209,6 +210,7 @@ void PlayingScene::checkWinLoseConditions() {
 
     if (!server->isAlive() && server->isDeathFinished()) {
         result = LevelResult::Victory;
+        SaveProgress::saveUnlockedLevel(levelNumber + 1);
         btnBText.setString("Next level");
         centerAndFitText(btnBText, btnB);
         return;
@@ -272,7 +274,6 @@ void PlayingScene::handleEvent(const sf::Event& event, Game& game) {
 
             for (auto& virus : viruses) {
                 if (virus.getGlobalBounds().contains(pos)) {
-                    //выбрать этот вирус
                 }
             }
         }

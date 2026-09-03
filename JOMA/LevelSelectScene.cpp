@@ -2,12 +2,14 @@
 #include "Game.h"
 #include "PlayingScene.h"
 #include "MainMenuScene.h"
+#include "SaveProgress.h"
 
 LevelSelectScene::LevelSelectScene()
     : titleText(font),
     buttonLabels{ sf::Text(font), sf::Text(font), sf::Text(font), sf::Text(font), sf::Text(font), sf::Text(font) },
     buttonStatus{ sf::Text(font), sf::Text(font), sf::Text(font), sf::Text(font), sf::Text(font), sf::Text(font) }
 {
+    unlockedLevel = SaveProgress::loadUnlockedLevel();
     font.openFromFile("C:/Windows/Fonts/consola.ttf");
 
     titleText.setString("SELECT LEVEL");

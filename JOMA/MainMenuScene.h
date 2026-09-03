@@ -11,6 +11,11 @@ public:
 private:
     sf::Font font;
     sf::Text titleJust, titleOne, titleMore, titleAttack;
+
+    bool hasSave = false;
+
+    sf::RectangleShape continueButton;
+    sf::Text continueText;
     sf::RectangleShape startButton;
     sf::Text startText;
     sf::RectangleShape exitButton;
